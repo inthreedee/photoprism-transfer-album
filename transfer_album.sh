@@ -42,8 +42,7 @@ shopt -s globstar
 
 # Create a new session
 echo "Creating session..."
-sessionID="$(curl --silent -X POST -H "Content-Type: application/json" -d "{\"username\": \"$apiUsername\", 
-\"password\": \"$apiPassword\"}" "$siteURL$sessionAPI" 2>&1 | grep -Eo '"id":.*"' | awk -F '"' '{print $4}')"
+sessionID="$(curl --silent -X POST -H "Content-Type: application/json" -d "{\"username\": \"$apiUsername\", \"password\": \"$apiPassword\"}" "$siteURL$sessionAPI" 2>&1 | grep -Eo '"id":.*"' | awk -F '"' '{print $4}')"
 
 # Clean up the session on script exit
 trap 'echo "Deleting session..." & curl --silent -X DELETE -H "X-Session-ID: $sessionID" -H "Content-Type: application/json" "$siteURL$sessionAPI/$sessionID" >/dev/null' EXIT
