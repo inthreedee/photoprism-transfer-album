@@ -10,6 +10,13 @@ Photoprism does not yet support transferring albums from Google Photos.  Once a 
 3. Edit the variables at the top of the script to match your paths and server configuration.
 4. Run the script.
 
+## What it does:
+1. A new Photoprism album is created.
+2. It scans the json files in the Google Takeout directory, pulling out the title field.
+3. It scans the yml files in the Photoprism sidecar directory, attempting to find a matching filename.
+4. Once it finds a match, it pulls the photo's UID from the yml file.
+5. An API request is sent to the server to add that UID to the album.
+
 ## Notes:
 
 - Only point this script to one google album directory at a time.
