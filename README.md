@@ -1,5 +1,5 @@
 # Google Photos album to Photoprism Album
-A quick and dirty script to transfer a Google Photos album to a new Photoprism album
+*A quick and dirty script to transfer a Google Photos album to a new Photoprism album*
 
 Photoprism does not yet support transferring albums from Google Photos.  Once a library has been fully transferred, this script will scrape the necessary data from a Google Takeout of an album and use it to generate a new Photoprism album without duplicating any files.
 
