@@ -54,10 +54,16 @@ function get_json_field() {
 
 function import_album() {
     albumDir="$1"; shift
+    metadataFile="$albumDir/metadata.json"
+
+    if [ ! -f "$metadataFile" ]; then
+        echo "Skipping folder \"$albumDir\", no metadata.json!"
+        return
+    fi
 
     # Parse JSON with awk, what could go wrong?
-    albumTitle=$(get_json_field title "$albumDir/metadata.json")
-    albumDescription=$(get_json_field description "$albumDir/metadata.json")
+    albumTitle=$(get_json_field title "$metadataFile")
+    albumDescription=$(get_json_field description "$metadataFile")
 
     if [ -z $albumTitle ]; then
         echo "Skipping folder \"$albumDir\", no album title found!"
@@ -131,4 +137,21 @@ function import_album() {
     done
 }
 
-import_album "$@"
+# Import directory as first parameter
+importDirectory=$1
+if [ -z "$importDirectory" ]; then
+    importDirectory=$(pwd)
+fi
+
+if [ -f "metadata.json" ]; then
+    # If this is an album directory, just import this album
+    echo "Importing \"$importDirectory\" as a single album"
+    import_album "$importDirectory"
+else
+    # Else import all albums found in this directory
+    echo "Importing all albums in \"$importDirectory\""
+    find "$importDirectory" -maxdepth 1 -type d | \
+    while read album; do
+        import_album "$album"
+    done
+fi
