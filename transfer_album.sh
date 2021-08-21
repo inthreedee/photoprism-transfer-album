@@ -171,6 +171,17 @@ function import_album() {
         fi
 
         imageFile=${jsonFile%.json}
+        if [ ! -f "$imageFile" ]; then
+            # Some albums seem to not have the extension int he name of the title
+            # In that case, grab the first non-JSON file with that name we can find
+            for candidate in "$imageFile"*; do
+                if [[ "$candidate" != *.json ]]; then
+                    imageFile="$candidate"
+                    break
+                fi
+            done
+        fi
+
         fileSHA=$(sha1sum "$imageFile" | awk '{print $1}')
         photoUID=$(api_call -X GET "$siteURL$fileAPI/$fileSHA" | grep -Eo '"PhotoUID":.*"' | awk -F '"' '{print $4}')
         log "$count: Adding $imageFile with hash $fileSHA and id $photoUID to album..."
