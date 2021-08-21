@@ -122,10 +122,10 @@ function import_album() {
     batchFiles=""
     batchCount=1
     for jsonFile in "$albumDir"/**/*.json; do
-	# Don't try to add metadata files
-	if [[ $(basename "$jsonFile") == metadata*.json ]]; then
-	    continue
-	fi
+        # Don't try to add metadata files
+        if [[ $(basename "$jsonFile") == metadata*.json ]]; then
+            continue
+        fi
 
         # Get the photo title (filename) from the google json file
         googleFile=$(get_json_field title "$jsonFile")
@@ -140,13 +140,14 @@ function import_album() {
         echo "$count: Adding $imageFile with hash $fileSHA to album..."
         batchIds="$batchIds $fileSHA"
 
+        count="$((count+1))"
+        batchCount="$((batchCount+1))"
+
         if [ $batchCount -gt 999 ]; then
             add_album_files $albumUID $batchIds
-            $batchIds=""
+            batchIds=""
+            batchCount=1
         fi
-
-        count="$((count+1))"
-        batchCount="$((fileCount+1))"
     done
 
     if [ -n $batchFiles ]; then
