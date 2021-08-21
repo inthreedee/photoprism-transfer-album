@@ -157,36 +157,21 @@ function import_album() {
     count=1
     batchFiles=""
     batchCount=1
-    for jsonFile in "$albumDir"/**/*.json; do
-        # Don't try to add metadata files
-        if [[ $(basename "$jsonFile") == metadata*.json ]]; then
-            continue
-        fi
-
-        # Get the photo title (filename) from the google json file
-        googleFile=$(get_json_field title "$jsonFile")
-        # Skip this file if it has no title
-        if [ -z "$googleFile" ]; then
-            continue
-        fi
-
-        imageFile=${jsonFile%.json}
-        if [ ! -f "$imageFile" ]; then
-            # Some albums seem to not have the extension int he name of the title
-            # In that case, grab the first non-JSON file with that name we can find
-            for candidate in "$imageFile"*; do
-                if [[ "$candidate" != *.json ]]; then
-                    imageFile="$candidate"
-                    break
-                fi
-            done
-        fi
-
-        fileSHA=$(sha1sum "$imageFile" | awk '{print $1}')
+    for albumFile in "$albumDir"/**/*.*; do
+        # Don't try to add metadata files or directories
+        [ -f "$albumFile" ] || continue
+        [[ "$albumFile" == *.json ]] && continue
+	
+        fileSHA=$(sha1sum "$albumFile" | awk '{print $1}')
         photoUID=$(api_call -X GET "$siteURL$fileAPI/$fileSHA" | grep -Eo '"PhotoUID":.*"' | awk -F '"' '{print $4}')
-        log "$count: Adding $imageFile with hash $fileSHA and id $photoUID to album..."
-        batchIds="$batchIds $photoUID"
+	
+        if [ -z "$photoUID" ]; then
+            log "WARN: Couldn't find file $albumFile with hash $fileSHA in database, skipping!"
+            continue
+        fi
 
+        log "$count: Adding $albumFile with hash $fileSHA and id $photoUID to album..."
+        batchIds="$batchIds $photoUID"
         count="$((count+1))"
         batchCount="$((batchCount+1))"
 
