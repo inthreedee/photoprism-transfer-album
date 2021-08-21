@@ -28,9 +28,15 @@ sessionAPI="/api/v1/session"
 albumAPI="/api/v1/albums"
 # Note - Album photos API: /api/v1/albums/$albumUID/photos
 
-apiUsername="admin"
-apiPassword='password'
+apiUsername=$API_USERNAME
+apiPassword=$API_PASSWORD
 
+if [ -z "$apiUsername" ]; then
+    read -p 'Username? ' apiUsername
+fi
+if [ -z "$apiPassword" ]; then
+    read -sp 'Password? ' apiUsername
+fi
 ############################################################################
 
 shopt -s globstar
