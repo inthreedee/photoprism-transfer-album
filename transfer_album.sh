@@ -172,7 +172,7 @@ function import_album() {
 
         imageFile=${jsonFile%.json}
         fileSHA=$(sha1sum "$imageFile" | awk '{print $1}')
-        photoUID=$(api_call -X GET "$siteURL/$fileAPI/$fileSHA" | grep -Eo '"PhotoUID":.*"' | awk -F '"' '{print $4}')
+        photoUID=$(api_call -X GET "$siteURL$fileAPI/$fileSHA" | grep -Eo '"PhotoUID":.*"' | awk -F '"' '{print $4}')
         log "$count: Adding $imageFile with hash $fileSHA and id $photoUID to album..."
         batchIds="$batchIds $photoUID"
 
@@ -188,6 +188,7 @@ function import_album() {
 
     if [ -n $batchFiles ]; then
         add_album_files $albumUID $batchIds
+        batchIds=""
     fi
 }
 
