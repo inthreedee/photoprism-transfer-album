@@ -14,14 +14,10 @@
 # Notes:
 #
 # - Only point this script to one google album directory at a time.
-# - Libraries with more than a few thousand photos can take a while;
-#   The more sidecar files that have to be scanned, the longer it will take.
-# - Sidecar files should be stored on an ssd for performance reasons.
-# - If an API becomes available to get a photo UID from its filename,
-#   that would be a much more efficient method than scanning sidecars files.
+# - Libraries with more than a few thousand photos can take a while
+# - Photo UID is assumed to be a SHA-1 hash of the file, if this changes
+#   then this script will need to be adjusted
 ############################################################################
-
-sidecarDir="/path/to/sidecar/directory"
 
 siteURL="https://photos.example.com"
 sessionAPI="/api/v1/session"
@@ -100,7 +96,7 @@ function import_album() {
     albumPhotosAPI="$albumAPI/$albumUID/photos"
 
     # Scan the google takeout dir for json files
-    echo "Searching jsons..."
+    echo "Adding photos..."
     count=1
     for jsonFile in "$albumDir"/**/*.json; do
         # Get the photo title (filename) from the google json file
@@ -111,33 +107,13 @@ function import_album() {
             continue
         fi
 
-        echo "$count: Trying to match $googleFile..."
+        imageFile=${jsonFile%.json}
+        fileSHA=$(sha1sum "$imageFile" | awk '{print $1}')
 
-        # Find a matching file in the photoprism sidecar directory
-        found=0
-        for ymlFile in "$sidecarDir"/**/*.yml; do
-            sidecarFile="$(basename "$ymlFile")"
+        echo "$count: Adding $imageFile with hash $fileSHA to album..."
 
-            if [ "${sidecarFile%.*}" = "${googleFile%.*}" ]; then
-                # We found a match
-                echo "Match found: $sidecarFile"
-                found=1
-
-                # Get the photo's UID
-                photoUID="$(awk '/UID:/ {print $2}' "$ymlFile")"
-
-                # Send an API request to add the photo to the album
-                echo "Adding photo $photoUID to album..."
-                curl --silent -X POST -H "X-Session-ID: $sessionID" -H "Content-Type: application/json" -d "{\"photos\": [\"$photoUID\"]}" "$siteURL$albumPhotosAPI" >/dev/null
-
-                # Stop processing sidecar files for this json
-                break
-            fi
-        done
-
-        if [ "$found" -eq 0 ]; then
-            echo "WARNING: No match found for $googleFile!"
-        fi
+        # Send an API request to add the photo to the album
+        curl --silent -X POST -H "X-Session-ID: $sessionID" -H "Content-Type: application/json" -d "{\"photos\": [\"$fileSHA\"]}" "$siteURL$albumPhotosAPI" >/dev/null
 
         count="$((count+1))"
     done
