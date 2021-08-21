@@ -1,14 +1,15 @@
 # Google Photos album to Photoprism Album
-*A somewhat involved script to transfer a Google Photos album to a new Photoprism album*
+*A somewhat involved script to import albums from a Google Photos Takeout as albums in Photoprism*
 
 Photoprism does not yet support transferring albums from Google Photos.  Once a library
 has been fully transferred, this script will scrape the necessary data from a Google
 Takeout of an album and use it to generate a new Photoprism album without duplicating any
-files.
+files. Note: you must import and fully index the photos in your Google Photos export before
+running this script! It depends heavily on the photos already being in Photoprism's database.
 
-This is my fork of [inthreedee's original script][upstream], and I am very
+This is a fork of [inthreedee's original script][upstream], and I am very
 grateful to them for doing all the annoying API work for me and providing a
-solid base to work from. This fork was inspired by and incorporates
+solid base to work from. A thousand thanks! This fork was inspired by and incorporates
 [StephenBrown2's suggestion][insight] to look up files via their SHA-1 hash,
 which simplifies and speeds things up considerably - look ma, no sidecar
 directory! It also includes various usability improvements such as batching
@@ -22,16 +23,17 @@ export in one go.
 ## To use this script:
 
 1. Download the desired album via Google Takeout.
-2. (Optional) Add a config.ini, see below
-3. Run the script. It will prompt interactively for any missing config. If given a
-   command line parameter, it treats it as a directory to process, otherwise it will look
-   in the current working directory for any albums it can find.
+2. (Optional) Add a config.ini, see below.
+3. Run the script and respond to any prompts.
 
-## Config File
+## Configuration
 
-The script will prompt interactively for any information it is missing, but you can provide
-it programatically either by providing environment variables, or placing a `config.ini` file
-in the directory you are running the script from. An example `config.ini`:
+The script accepts one optional command line parameter, a directory to import. If one is not
+provided, it will use the current working directory.
+
+The script will prompt interactively for all the configuration it needs, but you can also
+provide it programatically either by providing environment variables, or placing a `config.ini`
+file in the directory you are running the script from. An example `config.ini`:
 
 ```
 API_USERNAME=admin
@@ -39,17 +41,17 @@ API_PASSWORD=your really good password
 SITE_URL=https://photos.example.com
 ```
 
-If you're setting environment variables, it's the same values as the config file.
+If you're setting environment variables, use the same variable names as in the config file.
 
 ## What it does:
 
-1. It creates a new Photoprism album with the title and description from the album's
-   `metadata.json`.
+1. For each album, it creates a new Photoprism album with the title and description from
+   the album's `metadata.json`.
 2. It scans all files in the album's directory, hashing any non-JSON files.
 3. It looks up each file in the database by its hash using Photoprism's files API.
 4. If it finds a match, it adds the photo's UID to the current album's list.
-5. When all files or processed, or when it has gathered 999 files, an API request is sent
-   to the server to add the gathered photos to the album.
+5. When all files or processed, or every time it has gathered 999 files, an API request 
+   is sent to the server to add the gathered photos to the album.
 
 ## Notes:
 
@@ -90,5 +92,5 @@ if the curl commands seem like they're getting screwed up, you can remove the `l
 from the `api_call()` method, and it will bypass the most arcane bash stuff. You can also
 walk disable the file batching and submit the album files one at a time to bypass more
 complicated stuff, there's a comment block about that in the main loop.
-- Yes, this script parses JSON with awk and constructs JSON with bash loops. It works
-fine. There's a commented-out line to do most parsing with jq if it makes you feel better.
+- Yes, this script parses JSON with `awk` and constructs JSON with bash loops. It works
+fine. There's a commented-out line to do most parsing with `jq` if it makes you feel better.
