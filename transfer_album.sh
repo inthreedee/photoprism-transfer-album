@@ -21,12 +21,7 @@
 #   that would be a much more efficient method than scanning sidecars files.
 ############################################################################
 
-googleTakeoutDir="/path/to/takeout/directory"
-googleAlbumDir="$googleTakeoutDir/Google Album Name"
 sidecarDir="/path/to/sidecar/directory"
-
-# A new photoprism album will be created with the following name
-newAlbumName="New Photoprism Album Name"
 
 siteURL="https://photos.example.com"
 sessionAPI="/api/v1/session"
@@ -80,8 +75,14 @@ function import_album() {
     fi
 
     # Create a new album
-    echo "Creating album $newAlbumName..."
-    albumUID="$(curl --silent -X POST -H "X-Session-ID: $sessionID" -H "Content-Type: application/json" -d "{\"Title\": \"$newAlbumName\"}" "$siteURL$albumAPI" | grep -Eo '"UID":.*"' | awk -F '"' '{print $4}')"
+    echo "Creating album $albumTitle..."
+    albumUID=$(curl --silent -X POST \
+        -H "X-Session-ID: $sessionID" \
+        -H "Content-Type: application/json" \
+        -d "{\"Title\": \"$albumTitle\", \"Description\": \"$albumDescription\"}" \
+        "$siteURL$albumAPI" 2>&1 \
+        | grep -Eo '"UID":.*"' \
+        | awk -F '"' '{print $4}')
 
     echo "Album UID: $albumUID"
     albumPhotosAPI="$albumAPI/$albumUID/photos"
@@ -89,9 +90,9 @@ function import_album() {
     # Scan the google takeout dir for json files
     echo "Searching jsons..."
     count=1
-    for jsonFile in "$googleAlbumDir"/**/*.json; do
+    for jsonFile in "$albumDir"/**/*.json; do
         # Get the photo title (filename) from the google json file
-        googleFile="$(awk -F \" '/"title":/ {print $4}' "$jsonFile")"
+        googleFile=$(get_json_field title "$jsonFile")
 
         # Skip this file if it has no title
         if [ -z "$googleFile" ]; then
