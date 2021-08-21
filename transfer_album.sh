@@ -6,10 +6,10 @@
 # To use this script:
 #
 # 1. Download the desired album via Google Takeout.
-# 2. If not working directly on the server, download the
-#    photoprism sidecar directory.
-# 3. Edit the variables below to match your paths and server configuration.
-# 4. Run the script.
+# 2. (Optional) Add a config.ini in the directory you're running the
+#    script with the variables below (API_USERNAME, API_PASSWORD, SITE_URL)
+#    defined. This file should be bash-compatible, as it is simply sourced
+# 3. Run the script. It will prompt interactively for any missing config.
 #
 # Notes:
 #
@@ -18,15 +18,22 @@
 # - Photos are looked up via their SHA-1 hashes using the /files API
 ############################################################################
 
-siteURL="https://photos.example.com"
 sessionAPI="/api/v1/session"
 albumAPI="/api/v1/albums"
 fileAPI="/api/v1/files"
 # Note - Album photos API: /api/v1/albums/$albumUID/photos
 
+if [ -f config.ini ]; then
+    . config.ini
+fi
+
 apiUsername=$API_USERNAME
 apiPassword=$API_PASSWORD
+siteURL=$SITE_URL
 
+if [ -z "$siteURL" ]; then
+    read -p 'Site URL? ' siteURL
+fi
 if [ -z "$apiUsername" ]; then
     read -p 'Username? ' apiUsername
 fi
