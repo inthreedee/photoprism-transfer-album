@@ -15,13 +15,13 @@
 #
 # - Only point this script to one google album directory at a time.
 # - Libraries with more than a few thousand photos can take a while
-# - Photo UID is assumed to be a SHA-1 hash of the file, if this changes
-#   then this script will need to be adjusted
+# - Photos are looked up via their SHA-1 hashes using the /files API
 ############################################################################
 
 siteURL="https://photos.example.com"
 sessionAPI="/api/v1/session"
 albumAPI="/api/v1/albums"
+fileAPI="/api/v1/files"
 # Note - Album photos API: /api/v1/albums/$albumUID/photos
 
 apiUsername=$API_USERNAME
@@ -50,9 +50,10 @@ function log() {
 
 function logexec() {
     if [ -z "$commandFile" ]; then
-        >&2 echo -n "Exec: "
+        >&2 echo -n "Exec:"
         >&2 printf ' %q' "$@"
-        $@
+        >&2 echo
+        "$@"
     else
         printf ' %q' "$@" >> "$commandFile"
         echo >> "$commandFile"
@@ -171,9 +172,9 @@ function import_album() {
 
         imageFile=${jsonFile%.json}
         fileSHA=$(sha1sum "$imageFile" | awk '{print $1}')
-
-        log "$count: Adding $imageFile with hash $fileSHA to album..."
-        batchIds="$batchIds $fileSHA"
+        photoUID=$(api_call -X GET "$siteURL/$fileAPI/$fileSHA" | grep -Eo '"PhotoUID":.*"' | awk -F '"' '{print $4}')
+        log "$count: Adding $imageFile with hash $fileSHA and id $photoUID to album..."
+        batchIds="$batchIds $photoUID"
 
         count="$((count+1))"
         batchCount="$((batchCount+1))"
