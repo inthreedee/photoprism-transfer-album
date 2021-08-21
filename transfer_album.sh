@@ -31,7 +31,7 @@ if [ -z "$apiUsername" ]; then
     read -p 'Username? ' apiUsername
 fi
 if [ -z "$apiPassword" ]; then
-    read -sp 'Password? ' apiUsername
+    read -sp 'Password? ' apiPassword
     echo
 fi
 ############################################################################
