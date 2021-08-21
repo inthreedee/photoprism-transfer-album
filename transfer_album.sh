@@ -54,6 +54,29 @@ function get_json_field() {
     awk -F '"' '/"'"$field"'":/ { print $4 }' "$filename"
 }
 
+function make_json_array() {
+    first=$1; shift
+    list=""
+    if [ -n "$first" ]; then
+        list="\"$first\""
+    fi
+    while [ -n "$1" ]; do
+        list="$list,\"$1\""
+        shift
+    done
+    echo "[$list]"
+}
+
+function add_album_files() {
+    albumUID=$1; shift
+    albumPhotosAPI="$albumAPI/$albumUID/photos"
+
+    # Send an API request to add the photo to the album
+    jsonArray=$(make_json_array $@)
+    echo "Submitting batch to album id $albumUID"
+    curl --silent -X POST -H "X-Session-ID: $sessionID" -H "Content-Type: application/json" -d "{\"photos\": $jsonArray}" "$siteURL$albumPhotosAPI" >/dev/null
+}
+
 function import_album() {
     albumDir="$1"; shift
     metadataFile="$albumDir/metadata.json"
@@ -92,11 +115,12 @@ function import_album() {
         | grep -Eo '"UID":.*"' \
         | awk -F '"' '{print $4}')
     echo "Album UID: $albumUID"
-    albumPhotosAPI="$albumAPI/$albumUID/photos"
 
     # Scan the google takeout dir for json files
     echo "Adding photos..."
     count=1
+    batchFiles=""
+    batchCount=1
     for jsonFile in "$albumDir"/**/*.json; do
 	# Don't try to add metadata files
 	if [[ $(basename "$jsonFile") == metadata*.json ]]; then
@@ -114,12 +138,20 @@ function import_album() {
         fileSHA=$(sha1sum "$imageFile" | awk '{print $1}')
 
         echo "$count: Adding $imageFile with hash $fileSHA to album..."
+        batchIds="$batchIds $fileSHA"
 
-        # Send an API request to add the photo to the album
-        curl --silent -X POST -H "X-Session-ID: $sessionID" -H "Content-Type: application/json" -d "{\"photos\": [\"$fileSHA\"]}" "$siteURL$albumPhotosAPI" >/dev/null
+        if [ $batchCount -gt 999 ]; then
+            add_album_files $albumUID $batchIds
+            $batchIds=""
+        fi
 
         count="$((count+1))"
+        batchCount="$((fileCount+1))"
     done
+
+    if [ -n $batchFiles ]; then
+        add_album_files $albumUID $batchIds
+    fi
 }
 
 # Import directory as first parameter
