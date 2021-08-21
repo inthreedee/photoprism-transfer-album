@@ -26,7 +26,7 @@ export in one go.
 2. (Optional) Add a config.ini, see below.
 3. Run the script in the Takeout directory alongside the album and respond to any prompts.
 
-## Configuration
+## Configuration:
 
 The script accepts one optional command line parameter, a directory to import. If one is not
 provided, it will use the current working directory.
