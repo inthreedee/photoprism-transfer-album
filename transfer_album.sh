@@ -43,14 +43,6 @@ if [ -z "$apiPassword" ]; then
 fi
 ############################################################################
 
-shopt -s globstar
-
-if [[ "$1" == "-c" ]]; then
-    commandFile=$2
-    rm "$commandFile"
-    shift 2
-fi
-
 function log() {
     >&2 echo "$@"
 }
@@ -70,19 +62,6 @@ function logexec() {
 function api_call() {
     logexec curl --silent -H "Content-Type: application/json" -H "X-Session-ID: $sessionID" "$@"
 }
-
-
-# Create a new session
-log "Creating session..."
-sessionID="$(logexec curl --silent -X POST -H "Content-Type: application/json" -d "{\"username\": \"$apiUsername\", \"password\": \"$apiPassword\"}" "$siteURL$sessionAPI" | grep -Eo '"id":.*"' | awk -F '"' '{print $4}')"
-
-if [ -z "$sessionID" ]; then
-    log "Failed to get session id, bailing!"
-    exit 1
-fi
-
-# Clean up the session on script exit
-trap 'log "Deleting session..." && api_call -X DELETE "$siteURL$sessionAPI/$sessionID" >/dev/null' EXIT
 
 function get_json_field() {
     field=$1; shift
@@ -206,6 +185,30 @@ function import_album() {
         batchIds=""
     fi
 }
+
+############################################################################
+# MAIN
+############################################################################
+
+shopt -s globstar
+
+if [[ "$1" == "-c" ]]; then
+    commandFile=$2
+    rm "$commandFile"
+    shift 2
+fi
+
+# Create a new session
+log "Creating session..."
+sessionID="$(logexec curl --silent -X POST -H "Content-Type: application/json" -d "{\"username\": \"$apiUsername\", \"password\": \"$apiPassword\"}" "$siteURL$sessionAPI" | grep -Eo '"id":.*"' | awk -F '"' '{print $4}')"
+
+if [ -z "$sessionID" ]; then
+    log "Failed to get session id, bailing!"
+    exit 1
+fi
+
+# Clean up the session on script exit
+trap 'log "Deleting session..." && api_call -X DELETE "$siteURL$sessionAPI/$sessionID" >/dev/null' EXIT
 
 # Import directory as first parameter
 importDirectory=$1
