@@ -6,93 +6,222 @@
 # To use this script:
 #
 # 1. Download the desired album via Google Takeout.
-# 2. If not working directly on the server, download the
-#    photoprism sidecar directory.
-# 3. Edit the variables below to match your paths and server configuration.
-# 4. Run the script.
+# 2. (Optional) Add a config.ini in the directory you're running the
+#    script with the variables below (API_USERNAME, API_PASSWORD, SITE_URL)
+#    defined. This file should be bash-compatible, as it is simply sourced
+# 3. Run the script. It will prompt interactively for any missing config.
 #
 # Notes:
 #
 # - Only point this script to one google album directory at a time.
-# - Libraries with more than a few thousand photos can take a while;
-#   The more sidecar files that have to be scanned, the longer it will take.
-# - Sidecar files should be stored on an ssd for performance reasons.
-# - If an API becomes available to get a photo UID from its filename,
-#   that would be a much more efficient method than scanning sidecars files.
+# - Libraries with more than a few thousand photos can take a while
+# - Photos are looked up via their SHA-1 hashes using the /files API
 ############################################################################
 
-googleTakeoutDir="/path/to/takeout/directory"
-googleAlbumDir="$googleTakeoutDir/Google Album Name"
-sidecarDir="/path/to/sidecar/directory"
-
-# A new photoprism album will be created with the following name
-newAlbumName="New Photoprism Album Name"
-
-siteURL="https://photos.example.com"
 sessionAPI="/api/v1/session"
 albumAPI="/api/v1/albums"
+fileAPI="/api/v1/files"
 # Note - Album photos API: /api/v1/albums/$albumUID/photos
 
-apiUsername="admin"
-apiPassword='password'
+if [ -f config.ini ]; then
+    . config.ini
+fi
 
+apiUsername=$API_USERNAME
+apiPassword=$API_PASSWORD
+siteURL=$SITE_URL
+
+if [ -z "$siteURL" ]; then
+    read -p 'Site URL? ' siteURL
+fi
+if [ -z "$apiUsername" ]; then
+    read -p 'Username? ' apiUsername
+fi
+if [ -z "$apiPassword" ]; then
+    read -sp 'Password? ' apiPassword
+    echo
+fi
 ############################################################################
 
 shopt -s globstar
 
+if [[ "$1" == "-c" ]]; then
+    commandFile=$2
+    rm "$commandFile"
+    shift 2
+fi
+
+function log() {
+    >&2 echo "$@"
+}
+
+function logexec() {
+    if [ -z "$commandFile" ]; then
+        >&2 echo -n "Exec:"
+        >&2 printf ' %q' "$@"
+        >&2 echo
+        "$@"
+    else
+        printf ' %q' "$@" >> "$commandFile"
+        echo >> "$commandFile"
+    fi
+}
+
+function api_call() {
+    logexec curl --silent -H "Content-Type: application/json" -H "X-Session-ID: $sessionID" "$@"
+}
+
+
 # Create a new session
-echo "Creating session..."
-sessionID="$(curl --silent -X POST -H "Content-Type: application/json" -d "{\"username\": \"$apiUsername\", \"password\": \"$apiPassword\"}" "$siteURL$sessionAPI" 2>&1 | grep -Eo '"id":.*"' | awk -F '"' '{print $4}')"
+log "Creating session..."
+sessionID="$(logexec curl --silent -X POST -H "Content-Type: application/json" -d "{\"username\": \"$apiUsername\", \"password\": \"$apiPassword\"}" "$siteURL$sessionAPI" | grep -Eo '"id":.*"' | awk -F '"' '{print $4}')"
+
+if [ -z "$sessionID" ]; then
+    log "Failed to get session id, bailing!"
+    exit 1
+fi
 
 # Clean up the session on script exit
-trap 'echo "Deleting session..." & curl --silent -X DELETE -H "X-Session-ID: $sessionID" -H "Content-Type: application/json" "$siteURL$sessionAPI/$sessionID" >/dev/null' EXIT
+trap 'log "Deleting session..." && api_call -X DELETE "$siteURL$sessionAPI/$sessionID" >/dev/null' EXIT
 
-# Create a new album
-echo "Creating album $newAlbumName..."
-albumUID="$(curl --silent -X POST -H "X-Session-ID: $sessionID" -H "Content-Type: application/json" -d "{\"Title\": \"$newAlbumName\"}" "$siteURL$albumAPI" 2>&1 | grep -Eo '"UID":.*"' | awk -F '"' '{print $4}')"
+function get_json_field() {
+    field=$1; shift
+    filename=$1; shift
 
-echo "Album UID: $albumUID"
-albumPhotosAPI="$albumAPI/$albumUID/photos"
+    # This is more robust but only works if you have jq installed
+    #jq -r '.albumData["'"$field"'"]' "$filename"
+    # This assumes a nicely formatted JSON with one key:value pair per line and no escaped quotes
+    awk -F '"' '/"'"$field"'":/ { print $4 }' "$filename"
+}
 
-# Scan the google takeout dir for json files
-echo "Searching jsons..."
-count=1
-for jsonFile in "$googleAlbumDir"/**/*.json; do
-    # Get the photo title (filename) from the google json file
-    googleFile="$(awk -F \" '/"title":/ {print $4}' "$jsonFile")"
-    
-    # Skip this file if it has no title
-    if [ -z "$googleFile" ]; then
-        continue
+function make_json_array() {
+    first=$1; shift
+    list=""
+    if [ -n "$first" ]; then
+        list="\"$first\""
     fi
-    
-    echo "$count: Trying to match $googleFile..."
+    while [ -n "$1" ]; do
+        list="$list,\"$1\""
+        shift
+    done
+    echo "[$list]"
+}
 
-    # Find a matching file in the photoprism sidecar directory
-    found=0
-    for ymlFile in "$sidecarDir"/**/*.yml; do
-        sidecarFile="$(basename "$ymlFile")"
-        
-        if [ "${sidecarFile%.*}" = "${googleFile%.*}" ]; then
-            # We found a match
-            echo "Match found: $sidecarFile"
-            found=1
+function add_album_files() {
+    albumUID=$1; shift
+    albumPhotosAPI="$albumAPI/$albumUID/photos"
 
-            # Get the photo's UID
-            photoUID="$(awk '/UID:/ {print $2}' "$ymlFile")"
+    # Send an API request to add the photo to the album
+    jsonArray=$(make_json_array $@)
+    log "Submitting batch to album id $albumUID"
+    api_call -X POST -d "{\"photos\": $jsonArray}" "$siteURL$albumPhotosAPI" >/dev/null
+}
 
-            # Send an API request to add the photo to the album
-            echo "Adding photo $photoUID to album..."
-            curl --silent -X POST -H "X-Session-ID: $sessionID" -H "Content-Type: application/json" -d "{\"photos\": [\"$photoUID\"]}" "$siteURL$albumPhotosAPI" >/dev/null
-            
-            # Stop processing sidecar files for this json
-            break
+function import_album() {
+    albumDir="$1"; shift
+    metadataFile="$albumDir/metadata.json"
+
+    if [ ! -f "$metadataFile" ]; then
+        log "Skipping folder \"$albumDir\", no metadata.json!"
+        return
+    fi
+
+    # Parse JSON with awk, what could go wrong?
+    albumTitle=$(get_json_field title "$metadataFile")
+    albumDescription=$(get_json_field description "$metadataFile")
+
+    # Filter out various autogenerated or bad albums. Feel free to comment out
+    # any of the following if blocks if you want to import that type of album
+
+    # Albums without titles
+    if [ -z "$albumTitle" ]; then
+        log "Skipping folder \"$albumDir\", no album title found!"
+        return
+    fi
+
+    # Autogenerated auto-upload album
+    if [[ "$albumDescription" == "Album for automatically uploaded content from cameras and mobile devices" ]]; then
+        log "Skipping album $albumTitle, seems to be an autogenerated date album"
+        return
+    fi
+
+    # Autogenerated date album
+    if [[ "$albumTitle" == [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]* ]]; then
+        log "Skipping folder \"$albumDir\", looks like a date!"
+        return
+    fi
+
+    # Autogenerated hangout album
+    if [[ "$albumTitle" == "Hangout:"* ]]; then
+        log "Skipping album $albumTitle, seems to be an autogenerated Hangouts album"
+        return
+    fi
+
+    # Create a new album
+    log "Creating album $albumTitle..."
+    albumUID=$(api_call -X POST \
+        -d "{\"Title\": \"$albumTitle\", \"Description\": \"$albumDescription\"}" \
+        "$siteURL$albumAPI" 2>&1 \
+        | grep -Eo '"UID":.*"' \
+        | awk -F '"' '{print $4}')
+    log "Album UID: $albumUID"
+
+    # Scan the google takeout dir for json files
+    log "Adding photos..."
+    count=1
+    batchFiles=""
+    batchCount=1
+    for albumFile in "$albumDir"/**/*.*; do
+        # Don't try to add metadata files or directories
+        [ -f "$albumFile" ] || continue
+        [[ "$albumFile" == *.json ]] && continue
+	
+        fileSHA=$(sha1sum "$albumFile" | awk '{print $1}')
+        photoUID=$(api_call -X GET "$siteURL$fileAPI/$fileSHA" | grep -Eo '"PhotoUID":.*"' | awk -F '"' '{print $4}')
+	
+        if [ -z "$photoUID" ]; then
+            log "WARN: Couldn't find file $albumFile with hash $fileSHA in database, skipping!"
+            continue
+        fi
+
+        log "$count: Adding $albumFile with hash $fileSHA and id $photoUID to album..."
+        batchIds="$batchIds $photoUID"
+        count="$((count+1))"
+        batchCount="$((batchCount+1))"
+
+        # If for some reason the batching doesn't seem to be working, you can
+        # just add the files one a time by commenting out the api_call line in
+        # the add_album_files function above and uncommenting this next line:
+        # api_call -X POST -d "{\"photos\": \[\"$photoUID\"\]}" "$siteURL$albumPhotosAPI" >/dev/null
+
+        if [ $batchCount -gt 999 ]; then
+            add_album_files $albumUID $batchIds
+            batchIds=""
+            batchCount=1
         fi
     done
-    
-    if [ "$found" -eq 0 ]; then
-        echo "WARNING: No match found for $googleFile!"
+
+    if [ -n $batchFiles ]; then
+        add_album_files $albumUID $batchIds
+        batchIds=""
     fi
-    
-    count="$((count+1))"
-done
+}
+
+# Import directory as first parameter
+importDirectory=$1
+if [ -z "$importDirectory" ]; then
+    importDirectory=$(pwd)
+fi
+
+if [ -f "metadata.json" ]; then
+    # If this is an album directory, just import this album
+    log "Importing \"$importDirectory\" as a single album"
+    import_album "$importDirectory"
+else
+    # Else import all albums found in this directory
+    log "Importing all albums in \"$importDirectory\""
+    find "$importDirectory" -maxdepth 1 -type d | \
+    while read album; do
+        import_album "$album"
+    done
+fi
