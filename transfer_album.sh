@@ -165,8 +165,8 @@ function import_album() {
 
         log "$count: Adding $albumFile with hash $fileSHA and id $photoUID to album..."
         batchIds="$batchIds $photoUID"
-        count="$((count+1))"
-        batchCount="$((batchCount+1))"
+        count="$(($count+1))"
+        batchCount="$(($batchCount+1))"
 
         # If for some reason the batching doesn't seem to be working, you can
         # just add the files one a time by commenting out the api_call line in
