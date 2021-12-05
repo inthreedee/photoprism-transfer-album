@@ -55,7 +55,7 @@ function logexec() {
     if [ -z "$commandFile" ]; then
         "$@"
     else
-        printf "%q\n" "$@" | tee "$commandFile"
+        printf "%q\n" "$@" | tee -a "$commandFile"
     fi
 }
 
