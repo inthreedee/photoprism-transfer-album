@@ -44,7 +44,7 @@ fi
 ############################################################################
 
 function log() {
-    >&2 echo "$@"
+    echo "$@" >&2
 }
 
 # Execute a command or enable dry-run mode
