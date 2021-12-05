@@ -23,14 +23,15 @@ albumAPI="/api/v1/albums"
 fileAPI="/api/v1/files"
 # Note - Album photos API: /api/v1/albums/$albumUID/photos
 
+# Source a config if it exists
 if [ -f config.ini ]; then
     . config.ini
 fi
-
 apiUsername="$API_USERNAME"
 apiPassword="$API_PASSWORD"
 siteURL="$SITE_URL"
 
+# If the config does not exist, prompt user for input
 if [ -z "$siteURL" ]; then
     read -p 'Site URL? ' siteURL
 fi
@@ -43,6 +44,7 @@ if [ -z "$apiPassword" ]; then
 fi
 ############################################################################
 
+# Log to stderr
 function log() {
     echo "$@" >&2
 }
