@@ -47,15 +47,13 @@ function log() {
     >&2 echo "$@"
 }
 
+# Execute a command or enable dry-run mode
+# where all commands are logged to a file
 function logexec() {
     if [ -z "$commandFile" ]; then
-        >&2 echo -n "Exec:"
-        >&2 printf ' %q' "$@"
-        >&2 echo
         "$@"
     else
-        printf ' %q' "$@" >> "$commandFile"
-        echo >> "$commandFile"
+        printf "%q\n" "$@" | tee "$commandFile"
     fi
 }
 
