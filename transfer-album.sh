@@ -184,7 +184,7 @@ if [ "$#" -gt 0 ]; then
             --help | -h )
                 printf "Import Google Photos albums into Photoprism
 Usage: transfer-album.sh <options>
-  -t, --takeout-dir  Specify the Google Takeout directory (optional)
+  -t, --takeout-dir  Specify an alternate Google Takeout directory
   -c, --config       Specify a configuration file
   -d, --dry-run      Dump commands to a file instead of executing them
   -h, --help         Display this help
