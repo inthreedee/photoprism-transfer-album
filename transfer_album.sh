@@ -23,25 +23,6 @@ albumAPI="/api/v1/albums"
 fileAPI="/api/v1/files"
 # Note - Album photos API: /api/v1/albums/$albumUID/photos
 
-# Source a config if it exists
-if [ -f config.ini ]; then
-    . config.ini
-fi
-apiUsername="$API_USERNAME"
-apiPassword="$API_PASSWORD"
-siteURL="$SITE_URL"
-
-# If the config does not exist, prompt user for input
-if [ -z "$siteURL" ]; then
-    read -p 'Site URL? ' siteURL
-fi
-if [ -z "$apiUsername" ]; then
-    read -p 'Username? ' apiUsername
-fi
-if [ -z "$apiPassword" ]; then
-    read -sp 'Password? ' apiPassword
-    echo
-fi
 ############################################################################
 
 # Log to stderr
@@ -192,10 +173,76 @@ function import_album() {
 
 shopt -s globstar
 
-if [[ "$1" == "-c" ]]; then
-    commandFile="$2"
-    rm "$commandFile"
-    shift 2
+# Set the Google Takeout directory
+importDirectory="$(pwd)"
+
+# Process command line arguments
+if [ "$#" -gt 0 ]; then
+    while [ "$#" -gt 0 ]
+    do
+        case "$1" in
+            --help | -h )
+                printf "Import Google Photos albums into Photoprism
+Usage: transfer-album.sh <options>
+  -t, --takeout-dir  Specify the Google Takeout directory (optional)
+  -d, --dry-run      Dump commands to a file instead of executing them
+  -h, --help         Display this help
+"
+                exit 0
+                ;;
+            --takeout-dir | -t )
+                if [ -z "$2" ]; then
+                    log "Usage: transfer-album $1 /path/to/takeout/"
+                    exit 1
+                elif [ ! -d "$2" ]; then
+                    log "Invalid directory: $2"
+                    exit 1
+                else
+                    importDirectory="$2"
+                    
+                    # Shift to the next argument
+                    shift 2
+                fi
+                ;;
+            --dry-run | -d )
+                if [ -z "$2" ]; then
+                    log "Usage: transfer-album $1 /path/to/file.txt"
+                    exit 1
+                else
+                    commandFile="$2"
+                    # Create an empty file and directory structure
+                    install -D -m 644 /dev/null "$commandFile"
+                    
+                    # Shift to the next argument
+                    shift 2
+                fi
+                ;;
+            * )
+                log "Invalid option '$1'"
+                exit 0
+                ;;
+        esac
+    done
+fi
+
+# Source a config if it exists
+if [ -f config.ini ]; then
+    . config.ini
+fi
+apiUsername="$API_USERNAME"
+apiPassword="$API_PASSWORD"
+siteURL="$SITE_URL"
+
+# If the config does not exist, prompt user for input
+if [ -z "$siteURL" ]; then
+    read -p 'Site URL? ' siteURL
+fi
+if [ -z "$apiUsername" ]; then
+    read -p 'Username? ' apiUsername
+fi
+if [ -z "$apiPassword" ]; then
+    read -sp 'Password? ' apiPassword
+    echo
 fi
 
 # Create a new session
@@ -209,12 +256,6 @@ fi
 
 # Clean up the session on script exit
 trap 'log "Deleting session..." && api_call -X DELETE "$siteURL$sessionAPI/$sessionID" >/dev/null' EXIT
-
-# Import directory as first parameter
-importDirectory="$1"
-if [ -z "$importDirectory" ]; then
-    importDirectory="$(pwd)"
-fi
 
 if [ -f "metadata.json" ]; then
     # If this is an album directory, just import this album
