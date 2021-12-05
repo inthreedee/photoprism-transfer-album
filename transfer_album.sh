@@ -185,6 +185,7 @@ if [ "$#" -gt 0 ]; then
                 printf "Import Google Photos albums into Photoprism
 Usage: transfer-album.sh <options>
   -t, --takeout-dir  Specify the Google Takeout directory (optional)
+  -c, --config       Specify a configuration file
   -d, --dry-run      Dump commands to a file instead of executing them
   -h, --help         Display this help
 "
@@ -202,6 +203,21 @@ Usage: transfer-album.sh <options>
                     
                     # Shift to the next argument
                     shift 2
+                fi
+                ;;
+            --config | -c )
+                if [ -z "$2" ]; then
+                    log "Usage: transfer-album $1 /path/to/config.conf"
+                    exit 1
+                elif [ ! -f "$2" ]; then
+                    log "Config file not found: $2"
+                    exit 1
+                else
+                    # Source the file and set variables
+                    . "$2"
+                    apiUsername="$API_USERNAME"
+                    apiPassword="$API_PASSWORD"
+                    siteURL="$SITE_URL"
                 fi
                 ;;
             --dry-run | -d )
@@ -225,15 +241,7 @@ Usage: transfer-album.sh <options>
     done
 fi
 
-# Source a config if it exists
-if [ -f config.ini ]; then
-    . config.ini
-fi
-apiUsername="$API_USERNAME"
-apiPassword="$API_PASSWORD"
-siteURL="$SITE_URL"
-
-# If the config does not exist, prompt user for input
+# Prompt user for input if necessary
 if [ -z "$siteURL" ]; then
     read -p 'Site URL? ' siteURL
 fi
