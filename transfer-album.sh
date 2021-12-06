@@ -25,6 +25,8 @@ fileAPI="/api/v1/files"
 
 ############################################################################
 
+shopt -s globstar
+
 # Handle executing commands
 function logexec() {
     if [ -z "$commandFile" ] && [ -z "$verbosity" ]; then
@@ -175,11 +177,6 @@ function import_album() {
 # MAIN
 ############################################################################
 
-shopt -s globstar
-
-# Set the Google Takeout directory
-importDirectory="$(pwd)"
-
 # Process command line arguments
 if [ "$#" -gt 0 ]; then
     while [ "$#" -gt 0 ]
@@ -251,6 +248,12 @@ Usage: transfer-album.sh <options>
                 ;;
         esac
     done
+fi
+
+# Set the Google Takeout directory if needed
+if [ -z "$importDirectory" ]; then
+    echo "Import directory not set, using current working directory..."
+    importDirectory="$(pwd)"
 fi
 
 # Prompt user for input if necessary
