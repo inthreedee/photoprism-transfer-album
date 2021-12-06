@@ -212,6 +212,9 @@ Usage: transfer-album.sh <options>
                 if [ -z "$2" ]; then
                     echo "Usage: transfer-album $1 \"Album Name\"" >&2
                     exit 1
+                elif [ ! -z "$importAlbum" ]; then
+                    echo "Only one album can be specified at a time" >&2
+                    exit 1
                 fi
                 importAlbum="$2"
 
