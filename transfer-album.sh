@@ -218,6 +218,9 @@ Usage: transfer-album.sh <options>
                     apiUsername="$API_USERNAME"
                     apiPassword="$API_PASSWORD"
                     siteURL="$SITE_URL"
+                    
+                    # Shift to the next argument
+                    shift 2
                 fi
                 ;;
             --dry-run | -d )
