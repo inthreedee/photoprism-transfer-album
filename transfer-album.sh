@@ -25,13 +25,22 @@ fileAPI="/api/v1/files"
 
 ############################################################################
 
-# Execute a command or enable dry-run mode
-# where all commands are logged to a file
+# Handle executing commands
 function logexec() {
-    if [ -z "$commandFile" ]; then
+    if [ -z "$commandFile" ] && [ -z "$verbosity" ]; then
+        # Normal operation
         "$@"
-    else
+    elif [ -z "$commandFile" ] && [ "$verbosity" -eq 1 ]; then
+        # Verbose mode
+        printf 'Exec: %q\n' "$@"
+        "$@"
+    elif [ ! -z "$commandFile" ]; then
+        # Dry-run mode
         printf "%q\n" "$@" | tee -a "$commandFile"
+    else
+        # Oopsie mode
+        echo "Script error: Unexpected condition in logexec() function" >&2
+        exit 1
     fi
 }
 
@@ -182,6 +191,7 @@ Usage: transfer-album.sh <options>
   -t, --takeout-dir  Specify an alternate Google Takeout directory
   -c, --config       Specify a configuration file
   -d, --dry-run      Dump commands to a file instead of executing them
+  -v, --verbose      Print each command as it is executed
   -h, --help         Display this help
 "
                 exit 0
@@ -230,6 +240,10 @@ Usage: transfer-album.sh <options>
                     # Shift to the next argument
                     shift 2
                 fi
+                ;;
+            --verbose | -v )
+                verbosity=1
+                shift
                 ;;
             * )
                 echo "Invalid option '$1'" >&2
