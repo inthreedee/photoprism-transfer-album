@@ -186,6 +186,7 @@ if [ "$#" -gt 0 ]; then
                 printf "Import Google Photos albums into Photoprism
 Usage: transfer-album.sh <options>
   -i, --import-dir   Specify an alternate Google Takeout directory
+  -a, --album-name   Specify a single album name to import from the Takeout
   -c, --config       Specify a configuration file
   -d, --dry-run      Dump commands to a file instead of executing them
   -v, --verbose      Print each command as it is executed
@@ -193,7 +194,7 @@ Usage: transfer-album.sh <options>
 "
                 exit 0
                 ;;
-            --import-dir | -t )
+            --import-dir | -i )
                 if [ -z "$2" ]; then
                     echo "Usage: transfer-album $1 /path/to/takeout/" >&2
                     exit 1
@@ -202,10 +203,20 @@ Usage: transfer-album.sh <options>
                     exit 1
                 else
                     importDirectory="$2"
-                    
+
                     # Shift to the next argument
                     shift 2
                 fi
+                ;;
+            --album-name | -a )
+                if [ -z "$2" ]; then
+                    echo "Usage: transfer-album $1 \"Album Name\"" >&2
+                    exit 1
+                fi
+                importAlbum="$2"
+
+                # Shift to the next argument
+                shift 2
                 ;;
             --config | -c )
                 if [ -z "$2" ]; then
@@ -220,7 +231,7 @@ Usage: transfer-album.sh <options>
                     apiUsername="$API_USERNAME"
                     apiPassword="$API_PASSWORD"
                     siteURL="$SITE_URL"
-                    
+
                     # Shift to the next argument
                     shift 2
                 fi
@@ -233,7 +244,7 @@ Usage: transfer-album.sh <options>
                     commandFile="$2"
                     # Create an empty file and directory structure
                     install -D -m 644 /dev/null "$commandFile"
-                    
+
                     # Shift to the next argument
                     shift 2
                 fi
@@ -280,7 +291,24 @@ fi
 # Clean up the session on script exit
 trap 'echo "Deleting session..." && api_call -X DELETE "$siteURL$sessionAPI/$sessionID" >/dev/null' EXIT
 
-if [ -f "metadata.json" ]; then
+if [ ! -z "$albumName" ]; then
+    # Importing a single specified album
+    if [ "$albumName" = "$(pwd | xargs basename)" ]; then
+        # We're already working in the right directory
+        echo "Importing \"$album\""
+        import_album "$importDirectory"
+    else
+        # Try to find the right directory
+        album="$(find "$importDirectory" -maxdepth 1 -type d -name "$albumName")"
+        if [ -z "$album" ]; then
+            echo "Album \"$albumName\" not found."
+            exit 0
+        else
+            echo "Importing \"$album\""
+            import_album "$album"
+        fi
+    fi
+elif [ -f "metadata.json" ]; then
     # If this is an album directory, just import this album
     echo "Importing \"$importDirectory\" as a single album"
     import_album "$importDirectory"
