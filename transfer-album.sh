@@ -88,7 +88,7 @@ function import_album() {
     metadataFile="$albumDir/metadata.json"
 
     if [ ! -f "$metadataFile" ]; then
-        echo "Skipping folder \"$albumDir\", no metadata.json!"
+        echo "Skipping folder \"$albumDir\"; no metadata.json!"
         return
     fi
 
