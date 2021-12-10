@@ -140,9 +140,14 @@ function import_album() {
     batchFiles=""
     batchCount=1
     for albumFile in "$albumDir"/**/*.*; do
-        # Don't try to add metadata files or directories
-        [ -f "$albumFile" ] || continue
-        [[ "$albumFile" == *.json ]] && continue
+        # Don't try to add directories
+        if [ -d "$albumFile" ]; then
+            continue
+        fi
+        # Don't try to add metadata files
+        if [[ "$albumFile" == *.json ]]; then
+            continue
+        fi
 	
         fileSHA="$(sha1sum "$albumFile" | awk '{print $1}')"
         photoUID="$(api_call -X GET "$siteURL$fileAPI/$fileSHA" | grep -Eo '"PhotoUID":.*"' | awk -F '"' '{print $4}')"
