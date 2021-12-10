@@ -185,26 +185,45 @@ if [ "$#" -gt 0 ]; then
             --help | -h )
                 printf "Import Google Photos albums into Photoprism
 Usage: transfer-album.sh <options>
-  -i, --import-dir   Specify an alternate Google Takeout directory
-                     Defaults to the current working directory
-  -a, --album-name   Specify a single album name to import from the Takeout
-  -c, --config       Specify a configuration file
-  -d, --dry-run      Dump commands to a file instead of executing them
-  -v, --verbose      Print each command as it is executed
-  -h, --help         Display this help
+  -a, --import-all         Import all photo albums (default)
+  -n, --album-name [name]  Specify a single album name to import
+  -d, --takeout-dir [dir]  Specify an alternate Google Takeout directory
+                           Defaults to the current working directory
+  -c, --config [file]      Specify a configuration file
+  -r, --dry-run            Dump commands to a file instead of executing them
+  -v, --verbose            Print each command as it is executed
+  -h, --help               Display this help
 "
                 exit 0
                 ;;
-            --import-dir | -i )
+            --import-all | -a )
+                importAll="true"
+                
+                # Shift to the next argument
+                shift
+                ;;
+            --album-name | -n )
+                if [ "$importAll" = "true" ]; then
+                    echo "Cannot specify both -a and -n" >&2
+                    exit 1
+                elif [ -z "$2" ]; then
+                    echo "Usage: transfer-album $1 \"Album Name\"" >&2
+                    exit 1
+                elif [ ! -z "$importAlbum" ]; then
+                    echo "Only one album can be specified at a time. Use -a to import all albums" >&2
+                    exit 1
+                fi
+                importAlbum="$2"
+
+                # Shift to the next argument
+                shift 2
+                ;;
+            --takeout-dir | -d )
                 if [ -z "$2" ]; then
                     echo "Usage: transfer-album $1 /path/to/Takeout/Google Photos" >&2
                     exit 1
                 elif [ ! -d "$2" ]; then
                     echo "Invalid directory: $2" >&2
-                    exit 1
-                elif [ "basename $2" != "Google Photos" ]; then
-                    # Make sure we're in a Takeout directory
-                    echo -e "The provided directory does not appear to be a Takeout directory.\nExpected: /path/to/Takeout/Google Photos" >&2
                     exit 1
                 else
                     importDirectory="$2"
@@ -212,19 +231,6 @@ Usage: transfer-album.sh <options>
                     # Shift to the next argument
                     shift 2
                 fi
-                ;;
-            --album-name | -a )
-                if [ -z "$2" ]; then
-                    echo "Usage: transfer-album $1 \"Album Name\"" >&2
-                    exit 1
-                elif [ ! -z "$importAlbum" ]; then
-                    echo "Only one album can be specified at a time" >&2
-                    exit 1
-                fi
-                importAlbum="$2"
-
-                # Shift to the next argument
-                shift 2
                 ;;
             --config | -c )
                 if [ -z "$2" ]; then
@@ -244,7 +250,7 @@ Usage: transfer-album.sh <options>
                     shift 2
                 fi
                 ;;
-            --dry-run | -d )
+            --dry-run | -r )
                 if [ -z "$2" ]; then
                     echo "Usage: transfer-album $1 /path/to/file.txt" >&2
                     exit 1
@@ -273,12 +279,6 @@ fi
 if [ -z "$importDirectory" ]; then
     echo "Import directory not set, using current working directory"
     importDirectory="$(pwd)"
-    
-    # Double check that we are in the right directory
-    if [ "basename $importDirectory" != "Google Photos" ]; then
-        echo -e "The current working directory does not appear to be a Takeout directory.\nCurrent: $importDirectory\nExpected: /path/to/Takeout/Google Photos" >&2
-        exit 1
-    fi
 fi
 
 # Prompt user for input if necessary
@@ -309,22 +309,22 @@ if [ ! -z "$albumName" ]; then
     # Importing a single specified album
     if [ "$albumName" = "$(pwd | xargs basename)" ]; then
         # We're already working in the right directory
-        echo "Importing \"$album\""
+        echo "Importing album \"$albumName\""
         import_album "$importDirectory"
     else
         # Try to find the right directory
-        album="$(find "$importDirectory" -maxdepth 1 -type d -name "$albumName")"
-        if [ -z "$album" ]; then
-            echo "Album \"$albumName\" not found"
+        foundAlbum="$(find "$importDirectory" -maxdepth 1 -type d -name "$albumName")"
+        if [ -z "$foundAlbum" ]; then
+            echo "Unable to locate album \"$albumName\" in \"$importDirectory\""
             exit 0
         else
-            echo "Importing \"$album\""
-            import_album "$album"
+            echo "Importing album \"$albumName\""
+            import_album "$foundAlbum"
         fi
     fi
 elif [ -f "metadata.json" ]; then
-    # If this is an album directory, just import this album
-    echo "Importing \"$importDirectory\" as a single album"
+    # If we are being run from an album directory, just import this album
+    echo "\"$importDirectory\" appears to be an album; importing in single album mode"
     import_album "$importDirectory"
 else
     # Else import all albums found in this directory
