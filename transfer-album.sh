@@ -50,14 +50,16 @@ function api_call() {
     logexec curl --silent -H "Content-Type: application/json" -H "X-Session-ID: $sessionID" "$@"
 }
 
+# Get a specific field from a json file
+# Expects two arguments, the field name followed by the json file
 function get_json_field() {
-    field="$1"; shift
-    filename="$1"; shift
+    field="$1"
+    filename="$2"
 
-    # This is more robust but only works if you have jq installed
-    #jq -r '.albumData["'"$field"'"]' "$filename"
     # This assumes a nicely formatted JSON with one key:value pair per line and no escaped quotes
     awk -F '"' '/"'"$field"'":/ { print $4 }' "$filename"
+    # This is more robust but only works if you have jq installed
+    #jq -r '.albumData["'"$field"'"]' "$filename"
 }
 
 function make_json_array() {
@@ -84,7 +86,7 @@ function add_album_files() {
 }
 
 function import_album() {
-    albumDir="$1"; shift
+    albumDir="$1"
     metadataFile="$albumDir/metadata.json"
 
     if [ ! -f "$metadataFile" ]; then
