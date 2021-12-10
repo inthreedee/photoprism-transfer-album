@@ -186,6 +186,7 @@ if [ "$#" -gt 0 ]; then
                 printf "Import Google Photos albums into Photoprism
 Usage: transfer-album.sh <options>
   -i, --import-dir   Specify an alternate Google Takeout directory
+                     Defaults to the current working directory
   -a, --album-name   Specify a single album name to import from the Takeout
   -c, --config       Specify a configuration file
   -d, --dry-run      Dump commands to a file instead of executing them
@@ -196,10 +197,14 @@ Usage: transfer-album.sh <options>
                 ;;
             --import-dir | -i )
                 if [ -z "$2" ]; then
-                    echo "Usage: transfer-album $1 /path/to/takeout/" >&2
+                    echo "Usage: transfer-album $1 /path/to/Takeout/Google Photos" >&2
                     exit 1
                 elif [ ! -d "$2" ]; then
                     echo "Invalid directory: $2" >&2
+                    exit 1
+                elif [ "basename $2" != "Google Photos" ]; then
+                    # Make sure we're in a Takeout directory
+                    echo -e "The provided directory does not appear to be a Takeout directory.\nExpected: /path/to/Takeout/Google Photos" >&2
                     exit 1
                 else
                     importDirectory="$2"
@@ -266,8 +271,14 @@ fi
 
 # Set the Google Takeout directory if needed
 if [ -z "$importDirectory" ]; then
-    echo "Import directory not set, using current working directory..."
+    echo "Import directory not set, using current working directory"
     importDirectory="$(pwd)"
+    
+    # Double check that we are in the right directory
+    if [ "basename $importDirectory" != "Google Photos" ]; then
+        echo -e "The current working directory does not appear to be a Takeout directory.\nCurrent: $importDirectory\nExpected: /path/to/Takeout/Google Photos" >&2
+        exit 1
+    fi
 fi
 
 # Prompt user for input if necessary
@@ -304,7 +315,7 @@ if [ ! -z "$albumName" ]; then
         # Try to find the right directory
         album="$(find "$importDirectory" -maxdepth 1 -type d -name "$albumName")"
         if [ -z "$album" ]; then
-            echo "Album \"$albumName\" not found."
+            echo "Album \"$albumName\" not found"
             exit 0
         else
             echo "Importing \"$album\""
