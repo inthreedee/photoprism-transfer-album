@@ -148,33 +148,33 @@ function import_album() {
         if [[ "$albumFile" == *.json ]]; then
             continue
         fi
-	
+
         fileSHA="$(sha1sum "$albumFile" | awk '{print $1}')"
         photoUID="$(api_call -X GET "$siteURL$fileAPI/$fileSHA" | grep -Eo '"PhotoUID":.*"' | awk -F '"' '{print $4}')"
-	
+
         if [ -z "$photoUID" ]; then
             echo "WARN: Couldn't find file $albumFile with hash $fileSHA in database, skipping!"
             continue
         fi
 
         echo "$count: Adding $albumFile with hash $fileSHA and id $photoUID to album..."
-        batchIds="$batchIds $photoUID"
-        count="$(($count+1))"
-        batchCount="$(($batchCount+1))"
+        
+        if [ "$batching" = "true" ]; then
+            batchIds="$batchIds $photoUID"
+            count="$(($count+1))"
+            batchCount="$(($batchCount+1))"
 
-        # If for some reason the batching doesn't seem to be working, you can
-        # just add the files one a time by commenting out the api_call line in
-        # the add_album_files function above and uncommenting this next line:
-        # api_call -X POST -d "{\"photos\": \[\"$photoUID\"\]}" "$siteURL$albumPhotosAPI" >/dev/null
-
-        if [ $batchCount -gt 999 ]; then
-            add_album_files $albumUID $batchIds
-            batchIds=""
-            batchCount=1
+            if [ $batchCount -gt 999 ]; then
+                add_album_files $albumUID $batchIds
+                batchIds=""
+                batchCount=1
+            fi
+        else
+            api_call -X POST -d "{\"photos\": \[\"$photoUID\"\]}" "$siteURL$albumPhotosAPI" >/dev/null
         fi
     done
 
-    if [ -n $batchFiles ]; then
+    if [ "$batching" = "true" ] && [ -n $batchFiles ]; then
         add_album_files $albumUID $batchIds
         batchIds=""
     fi
@@ -190,13 +190,15 @@ if [ "$#" -gt 0 ]; then
     do
         case "$1" in
             --help | -h )
-                printf "Import Google Photos albums into Photoprism
+                printf "Import Google Photos albums into Photoprism.
 Usage: transfer-album.sh <options>
   -a, --import-all         Import all photo albums (default)
   -n, --album-name [name]  Specify a single album name to import
   -d, --takeout-dir [dir]  Specify an alternate Google Takeout directory
                            Defaults to the current working directory
-  -c, --config [file]      Specify a configuration file
+  -o, --no-batch           Disable batch submitting to the API
+                           Instead, add photos one at a time as they are found
+  -c, --config [file]      Specify an optional configuration file
   -r, --dry-run            Dump commands to a file instead of executing them
   -v, --verbose            Print each command as it is executed
   -h, --help               Display this help
@@ -238,6 +240,10 @@ Usage: transfer-album.sh <options>
                     # Shift to the next argument
                     shift 2
                 fi
+                ;;
+            --no-batch | -o )
+                batching="false"
+                shift
                 ;;
             --config | -c )
                 if [ -z "$2" ]; then
@@ -282,6 +288,11 @@ Usage: transfer-album.sh <options>
     done
 fi
 
+# Initialize variables
+if [ -z "$batching" ]; then
+    batching="true"
+fi
+
 # Set the Google Takeout directory if needed
 if [ -z "$importDirectory" ]; then
     echo "Import directory not set, using current working directory"
@@ -297,7 +308,7 @@ if [ -z "$apiUsername" ]; then
 fi
 if [ -z "$apiPassword" ]; then
     read -sp 'Password? ' apiPassword
-    echo
+    echo ""
 fi
 
 # Create a new session
@@ -312,6 +323,7 @@ fi
 # Clean up the session on script exit
 trap 'echo "Deleting session..." && api_call -X DELETE "$siteURL$sessionAPI/$sessionID" >/dev/null' EXIT
 
+# Run the imports
 if [ ! -z "$albumName" ]; then
     # Importing a single specified album
     if [ "$albumName" = "$(pwd | xargs basename)" ]; then
