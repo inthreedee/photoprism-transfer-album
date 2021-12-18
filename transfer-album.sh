@@ -164,8 +164,8 @@ function import_album() {
             count="$(($count+1))"
             batchCount="$(($batchCount+1))"
 
-            if [ $batchCount -gt 999 ]; then
-                add_album_files $albumUID $batchIds
+            if [ "$batchCount" -gt 999 ]; then
+                add_album_files "$albumUID" "$batchIds"
                 batchIds=""
                 batchCount=1
             fi
@@ -174,8 +174,8 @@ function import_album() {
         fi
     done
 
-    if [ "$batching" = "true" ] && [ -n $batchFiles ]; then
-        add_album_files $albumUID $batchIds
+    if [ "$batching" = "true" ] && [ -n "$batchFiles" ]; then
+        add_album_files "$albumUID" "$batchIds"
         batchIds=""
     fi
 }
