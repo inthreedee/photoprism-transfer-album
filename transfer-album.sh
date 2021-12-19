@@ -13,9 +13,7 @@
 #
 # Notes:
 #
-# - Only point this script to one google album directory at a time.
 # - Libraries with more than a few thousand photos can take a while
-# - Photos are looked up via their SHA-1 hashes using the /files API
 ############################################################################
 
 sessionAPI="/api/v1/session"
@@ -136,7 +134,7 @@ function import_album() {
 
     # Scan for photos
     if [ "$matching" = "hash" ]; then
-        # We're matching photos by hash
+        # Photos are looked up via their SHA-1 hashes using the /files API
         echo "Adding photos..."
         count=1
         batchFiles=""
@@ -249,6 +247,16 @@ By default, it will import all albums that aren't auto-generated
 Use --album-name to specify any single album to upload.
 This will also bypass the auto-generated album checks.
 
+There are two methods of matching/identifying photos: By hash or by name.
+- Use hash matching if you uploaded photos from your Google Takeout and
+  the files Photoprism and Google Photos are identical. This is faster.
+- Use name matching if you uploaded original photos from another source
+  and you just want to re-create your google Photos albums in Photoprism.
+See --match below.
+
+By default, hash matching also batches photo submissions to the API for speed.
+If this causes problems, see --batching below to disable it.
+
 Usage: transfer-album.sh <options>
   -a, --import-all         Import all photo albums (default)
   -n, --album-name [name]  Specify a single album name to import
@@ -257,12 +265,6 @@ Usage: transfer-album.sh <options>
   -s, --sidecar-dir [dir]  Specify the sidecar directory (name matching only)
   -m, --match [option]     Set the method used to match/identify photos
                            Valid options: hash/name - Default matching: hash
-                           - Use hash if you uploaded photos from
-                             your Google Takeout and the files in
-                             Photoprism and Google Photos are identical
-                           - Use name if you uploaded original photos from
-                             another source and just want to re-create your
-                             Google Photos albums
   -b, --batching [option]  Set to true/false to enable/disable batch submitting
                            to the API (default: true, hash mode only)
                            Instead, add photos one at a time as they are found
