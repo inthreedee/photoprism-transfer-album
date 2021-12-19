@@ -134,49 +134,100 @@ function import_album() {
         | awk -F '"' '{print $4}')"
     echo "Album UID: $albumUID"
 
-    # Scan the google takeout dir for json files
-    echo "Adding photos..."
-    count=1
-    batchFiles=""
-    batchCount=1
-    for albumFile in "$albumDir"/**/*.*; do
-        # Don't try to add directories
-        if [ -d "$albumFile" ]; then
-            continue
-        fi
-        # Don't try to add metadata files
-        if [[ "$albumFile" == *.json ]]; then
-            continue
-        fi
-
-        fileSHA="$(sha1sum "$albumFile" | awk '{print $1}')"
-        photoUID="$(api_call -X GET "$siteURL$fileAPI/$fileSHA" | grep -Eo '"PhotoUID":.*"' | awk -F '"' '{print $4}')"
-
-        if [ -z "$photoUID" ]; then
-            echo "WARN: Couldn't find file $albumFile with hash $fileSHA in database, skipping!"
-            continue
-        fi
-
-        echo "$count: Adding $albumFile with hash $fileSHA and id $photoUID to album..."
-        
-        if [ "$batching" = "true" ]; then
-            batchIds="$batchIds $photoUID"
-            count="$(($count+1))"
-            batchCount="$(($batchCount+1))"
-
-            if [ "$batchCount" -gt 999 ]; then
-                add_album_files "$albumUID" "$batchIds"
-                batchIds=""
-                batchCount=1
+    # Scan for photos
+    if [ "$matching" = "hash" ]; then
+        # We're matching photos by hash
+        echo "Adding photos..."
+        count=1
+        batchFiles=""
+        batchCount=1
+        # Scan the album directory for photos
+        for albumFile in "$albumDir"/**/*.*; do
+            # Don't try to add directories
+            if [ -d "$albumFile" ]; then
+                continue
             fi
-        else
-            api_call -X POST -d "{\"photos\": \[\"$photoUID\"\]}" "$siteURL$albumPhotosAPI" >/dev/null
-        fi
-    done
+            # Don't try to add metadata files
+            if [[ "$albumFile" == *.json ]]; then
+                continue
+            fi
 
-    if [ "$batching" = "true" ] && [ -n "$batchFiles" ]; then
-        add_album_files "$albumUID" "$batchIds"
-        batchIds=""
+            fileSHA="$(sha1sum "$albumFile" | awk '{print $1}')"
+            photoUID="$(api_call -X GET "$siteURL$fileAPI/$fileSHA" | grep -Eo '"PhotoUID":.*"' | awk -F '"' '{print $4}')"
+
+            if [ -z "$photoUID" ]; then
+                echo "WARN: Couldn't find file $albumFile with hash $fileSHA in database, skipping!"
+                continue
+            fi
+
+            echo "$count: Adding $albumFile with hash $fileSHA and id $photoUID to album..."
+            
+            if [ "$batching" = "true" ]; then
+                batchIds="$batchIds $photoUID"
+                count="$(($count+1))"
+                batchCount="$(($batchCount+1))"
+
+                if [ "$batchCount" -gt 999 ]; then
+                    add_album_files "$albumUID" "$batchIds"
+                    batchIds=""
+                    batchCount=1
+                fi
+            else
+                api_call -X POST -d "{\"photos\": \[\"$photoUID\"\]}" "$siteURL$albumPhotosAPI" >/dev/null
+            fi
+        done
+
+        if [ "$batching" = "true" ] && [ -n "$batchFiles" ]; then
+            add_album_files "$albumUID" "$batchIds"
+            batchIds=""
+        fi
+    elif [ "$matching" = "name" ]; then
+        # We're matching photos by name
+        # Scan the google takeout dir for json files
+        echo "Searching jsons..."
+        count=1
+        for jsonFile in "$albumDir"/**/*.json; do
+            # Get the photo title (filename) from the google json file
+            googleFile="$(awk -F \" '/"title":/ {print $4}' "$jsonFile")"
+            
+            # Skip this file if it has no title
+            if [ -z "$googleFile" ]; then
+                continue
+            fi
+            
+            echo "$count: Trying to match $googleFile..."
+
+            # Find a matching file in the photoprism sidecar directory
+            found=0
+            for ymlFile in "$sidecarDirectory"/**/*.yml; do
+                sidecarFile="$(basename "$ymlFile")"
+                
+                if [ "${sidecarFile%.*}" = "${googleFile%.*}" ]; then
+                    # We found a match
+                    echo "Match found: $sidecarFile"
+                    found=1
+
+                    # Get the photo's UID
+                    photoUID="$(awk '/UID:/ {print $2}' "$ymlFile")"
+
+                    # Send an API request to add the photo to the album
+                    echo "Adding photo $photoUID to album..."
+                    api_call -X POST -d "{\"photos\": \[\"$photoUID\"\]}" "$siteURL$albumPhotosAPI" >/dev/null
+                    
+                    # Stop processing sidecar files for this json
+                    break
+                fi
+            done
+            
+            if [ "$found" -eq 0 ]; then
+                echo "WARNING: No match found for $googleFile!"
+            fi
+            
+            count="$((count+1))"
+        done
+    else
+        echo "Script error: Unexpected matching condition in import_album() function: \"$matching\"" >&2
+        exit 1
     fi
 }
 
@@ -196,7 +247,17 @@ Usage: transfer-album.sh <options>
   -n, --album-name [name]  Specify a single album name to import
   -d, --takeout-dir [dir]  Specify an alternate Google Takeout directory
                            Defaults to the current working directory
-  -o, --no-batch           Disable batch submitting to the API
+  -s, --sidecar-dir [dir]  Specify the sidecar directory (name matching only)
+  -m, --match [option]     Set the method used to match/identify photos
+                           Valid options: hash/name - Default matching: hash
+                           - Use hash if you uploaded photos from
+                             your Google Takeout and the files in
+                             Photoprism and Google Photos are identical
+                           - Use name if you uploaded original photos from
+                             another source and just want to re-create your
+                             Google Photos albums
+  -b, --batching [option]  Set to true/false to enable/disable batch submitting
+                           to the API (default: true, hash mode only)
                            Instead, add photos one at a time as they are found
   -c, --config [file]      Specify an optional configuration file
   -r, --dry-run            Dump commands to a file instead of executing them
@@ -241,9 +302,47 @@ Usage: transfer-album.sh <options>
                     shift 2
                 fi
                 ;;
-            --no-batch | -o )
-                batching="false"
-                shift
+            --sidecar-dir | -s )
+                if [ -z "$2" ]; then
+                    echo "Usage: transfer-album $1 /path/to/sidecar/directory" >&2
+                    exit 1
+                elif [ ! -d "$2" ]; then
+                    echo "Invalid directory: $2" >&2
+                    exit 1
+                else
+                    sidecarDirectory="$2"
+
+                    # Shift to the next argument
+                    shift 2
+                fi
+                ;;
+            --match | -m )
+                if [ -z "$2" ]; then
+                    echo "Usage: transfer-album $1 [hash/name]" >&2
+                    exit 1
+                elif [ "$2" != "hash" ] || [ "$2" != "name" ]; then
+                    echo "Usage: transfer-album $1 [hash/name]" >&2
+                    exit 1
+                else
+                    matching="$2"
+                    
+                    # Shift to the next argument
+                    shift 2
+                fi
+                ;;
+            --batching | -b )
+                if [ -z "$2" ]; then
+                    echo "Usage: transfer-album $1 [true/false]" >&2
+                    exit 1
+                elif [ "$2" != "true" ] || [ "$2" != "false" ]; then
+                    echo "Usage: transfer-album $1 [true/false]" >&2
+                    exit 1
+                else
+                    batching="$2"
+                    
+                    # Shift to the next argument
+                    shift 2
+                fi
                 ;;
             --config | -c )
                 if [ -z "$2" ]; then
@@ -278,10 +377,12 @@ Usage: transfer-album.sh <options>
                 ;;
             --verbose | -v )
                 verbosity=1
+                
+                # Shift to the next argument
                 shift
                 ;;
             * )
-                echo "Invalid option '$1'" >&2
+                echo -e "Invalid option '$1'\nUse -h for help" >&2
                 exit 0
                 ;;
         esac
@@ -292,11 +393,8 @@ fi
 if [ -z "$batching" ]; then
     batching="true"
 fi
-
-# Set the Google Takeout directory if needed
-if [ -z "$importDirectory" ]; then
-    echo "Import directory not set, using current working directory"
-    importDirectory="$(pwd)"
+if [ -z "$matching" ]; then
+    matching="hash"
 fi
 
 # Prompt user for input if necessary
@@ -309,6 +407,23 @@ fi
 if [ -z "$apiPassword" ]; then
     read -sp 'Password? ' apiPassword
     echo ""
+fi
+
+# Set the Google Takeout directory if needed
+if [ -z "$importDirectory" ]; then
+    echo "Import directory not set, using current working directory"
+    importDirectory="$(pwd)"
+fi
+
+# Get the sidecar directory if needed
+if [ "$matching" = "name" ] && [ -z "$sidecarDirectory" ]; then
+    while read -rp 'Path to sidecar directory? ' sidecarDirectory; do
+        if [ ! -d "$sidecarDirectory" ]; then
+            echo "That directory is invalid or does not exist. Please try again."
+        else
+            break
+        fi
+    done
 fi
 
 # Create a new session
