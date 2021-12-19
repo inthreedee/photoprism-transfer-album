@@ -242,6 +242,10 @@ if [ "$#" -gt 0 ]; then
         case "$1" in
             --help | -h )
                 printf "Import Google Photos albums into Photoprism.
+This script imports albums from a downloaded Google Takeout.
+By default, it will import all albums that aren't auto-generated
+(ie, hangouts albums, albums by year, or albums by date)
+
 Usage: transfer-album.sh <options>
   -a, --import-all         Import all photo albums (default)
   -n, --album-name [name]  Specify a single album name to import
@@ -279,11 +283,11 @@ Usage: transfer-album.sh <options>
                 elif [ -z "$2" ]; then
                     echo "Usage: transfer-album $1 \"Album Name\"" >&2
                     exit 1
-                elif [ ! -z "$importAlbum" ]; then
+                elif [ ! -z "$albumName" ]; then
                     echo "Only one album can be specified at a time. Use -a to import all albums" >&2
                     exit 1
                 fi
-                importAlbum="$2"
+                albumName="$2"
 
                 # Shift to the next argument
                 shift 2
