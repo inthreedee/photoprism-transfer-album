@@ -239,8 +239,8 @@ if [ "$#" -gt 0 ]; then
     do
         case "$1" in
             --help | -h )
-                printf "Import Google Photos albums into Photoprism.
-This script imports albums from a downloaded Google Takeout.
+                printf "This script imports albums from a downloaded Google Takeout.
+
 By default, it will import all albums that aren't auto-generated
 (ie, hangouts albums, albums by year, or albums by date)
 
