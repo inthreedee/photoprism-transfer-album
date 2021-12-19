@@ -399,13 +399,13 @@ fi
 
 # Prompt user for input if necessary
 if [ -z "$siteURL" ]; then
-    read -p 'Site URL? ' siteURL
+    read -rp 'Site URL? ' siteURL
 fi
 if [ -z "$apiUsername" ]; then
-    read -p 'Username? ' apiUsername
+    read -rp 'Username? ' apiUsername
 fi
 if [ -z "$apiPassword" ]; then
-    read -sp 'Password? ' apiPassword
+    read -srp 'Password? ' apiPassword
     echo ""
 fi
 
