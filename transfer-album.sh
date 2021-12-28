@@ -21,6 +21,12 @@ albumAPI="/api/v1/albums"
 fileAPI="/api/v1/files"
 # Note - Album photos API: /api/v1/albums/$albumUID/photos
 
+# Get the location of this script
+runDir="$(realpath "$0" | xargs dirname)"
+
+# Log file for dry-run mode
+logFile="$runDir/transfer-album.log"
+
 ############################################################################
 
 shopt -s globstar
@@ -292,7 +298,7 @@ Usage: transfer-album.sh <options>
                     echo "Only one album can be specified at a time. Use -a to import all albums" >&2
                     exit 1
                 fi
-                albumName="$2"
+                specifiedAlbum="$2"
 
                 # Shift to the next argument
                 shift 2
@@ -372,17 +378,12 @@ Usage: transfer-album.sh <options>
                 fi
                 ;;
             --dry-run | -r )
-                if [ -z "$2" ]; then
-                    echo "Usage: transfer-album $1 /path/to/file.txt" >&2
-                    exit 1
-                else
-                    dryRunFile="$2"
-                    # Create an empty file and directory structure
-                    install -D -m 644 /dev/null "$dryRunFile"
-
-                    # Shift to the next argument
-                    shift 2
-                fi
+                dryRunFile="$2"
+                # Create an empty file and directory structure
+                install -m 644 /dev/null "$logFile"
+                
+                # Shift to the next argument
+                shift
                 ;;
             --verbose | -v )
                 verbosity=1
@@ -443,6 +444,8 @@ if [ -z "$sessionID" ]; then
     echo "Failed to get session id, bailing!" >&2
     exit 1
 fi
+
+echo "Session created."
 
 # Clean up the session on script exit
 trap 'echo "Deleting session..." && api_call -X DELETE "$siteURL$sessionAPI/$sessionID" >/dev/null' EXIT
