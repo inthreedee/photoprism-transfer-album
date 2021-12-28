@@ -27,16 +27,16 @@ shopt -s globstar
 
 # Handle executing commands
 function logexec() {
-    if [ -z "$commandFile" ] && [ -z "$verbosity" ]; then
+    if [ -z "$dryRunFile" ] && [ -z "$verbosity" ]; then
         # Normal operation
         "$@"
-    elif [ -z "$commandFile" ] && [ "$verbosity" -eq 1 ]; then
+    elif [ -z "$dryRunFile" ] && [ "$verbosity" -eq 1 ]; then
         # Verbose mode
         printf 'Exec: %q\n' "$@"
         "$@"
-    elif [ ! -z "$commandFile" ]; then
+    elif [ ! -z "$dryRunFile" ]; then
         # Dry-run mode
-        printf "%q\n" "$@" | tee -a "$commandFile"
+        printf "%q\n" "$@" | tee -a "$dryRunFile"
     else
         # Oopsie mode
         echo "Script error: Unexpected condition in logexec() function" >&2
@@ -376,9 +376,9 @@ Usage: transfer-album.sh <options>
                     echo "Usage: transfer-album $1 /path/to/file.txt" >&2
                     exit 1
                 else
-                    commandFile="$2"
+                    dryRunFile="$2"
                     # Create an empty file and directory structure
-                    install -D -m 644 /dev/null "$commandFile"
+                    install -D -m 644 /dev/null "$dryRunFile"
 
                     # Shift to the next argument
                     shift 2
