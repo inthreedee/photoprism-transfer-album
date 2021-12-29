@@ -19,6 +19,9 @@ running this script! It depends heavily on the photos already being in Photopris
 3. (Optional) Add a config.ini, see below.
 4. Run the script in the Takeout directory alongside the album and respond to any prompts.
 
+Tip: Pipe the output to tee to watch it run and save the output to a file for easy grepping:
+`./transfer-album.sh [options] | tee output.log`
+
 ## Options:
 ```
 Usage: transfer-album.sh <options>
@@ -97,8 +100,5 @@ over the web.
 creates things in Photoprism using the API - likely worst case is, you have a bunch of broken
 albums you have to delete. That said, as always with strange scripts off the internet, use at
 our own risk, peek under the hood if you're concerned, etc.
-
-## Notes you probably don't care about:
-
 - Yes, this script parses JSON with `awk` and constructs JSON with bash loops. It works
 fine. There's a commented-out line to do most parsing with `jq` if it makes you feel better.
