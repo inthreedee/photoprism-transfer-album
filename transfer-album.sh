@@ -46,12 +46,12 @@ function api_call() {
     response="$(curl --silent -H "Content-Type: application/json" -H "X-Session-ID: $sessionID" "$@")"
 
     # Check the response
-    if echo "$response" | grep "Invalid request" >/dev/null; then
-        echo "Invalid API request, bailing!" >&2
-        exit 1
+    if echo "$response" | grep '"error":' >/dev/null; then
+        echo -e "API request failed! Response:\n$response" >&2
     fi
     
-    return "$response"
+    # Return the response
+    echo "$response"
 }
 
 # Get a specific field from a json file
