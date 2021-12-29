@@ -50,12 +50,14 @@ If `--takeout-dir` is not specified, it will use the current working directory.
 
 If `--match` is not specified, hash mode will be used.
 - Use hash matching if you've uploaded photos from your Google Takeout and 
-  the files in Photoprism and Google Photos are identical. This is faster.
+  the files in Photoprism and Google Photos are identical. This method is faster.
 - Use name matching if you've uploaded original photos from another source 
   and you just want to re-create your google Photos albums in Photoprism.
 
-If `--batching` is not specified, it defaults to true for hash matching mode. 
-Name matching mode does not currently support batch submission to the API.
+If `--batching` is not specified, it defaults to true for hash matching mode 
+and false for name matching mode. 
+Disabling batching will submit photos to the API one at a time as matches are found. 
+Batching currently has no effect in name matching mode.
 
 ## Optional config file:
 The script will prompt interactively for all the information it needs. 
