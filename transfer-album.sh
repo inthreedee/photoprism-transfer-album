@@ -335,7 +335,7 @@ Usage: transfer-album.sh <options>
                 if [ -z "$2" ]; then
                     echo "Usage: transfer-album $1 [hash/name]" >&2
                     exit 1
-                elif [ "$2" != "hash" ] || [ "$2" != "name" ]; then
+                elif [ "$2" != "hash" ] && [ "$2" != "name" ]; then
                     echo "Usage: transfer-album $1 [hash/name]" >&2
                     exit 1
                 else
