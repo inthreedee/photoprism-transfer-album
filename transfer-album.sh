@@ -20,6 +20,8 @@
 # Call the script with --help for more information.
 #
 # Please note: Large photo libraries can take a while to process
+#
+# License: GPLv3
 ############################################################################
 
 sessionAPI="/api/v1/session"
