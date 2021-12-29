@@ -401,7 +401,17 @@ fi
 # Create a new session
 echo "Creating session..."
 
-sessionID="$(curl --silent -X POST -H "Content-Type: application/json" -d "{\"username\": \"$apiUsername\", \"password\": \"$apiPassword\"}" "$siteURL$sessionAPI" | grep -Eo '"id":.*"' | awk -F '"' '{print $4}')"
+# Call the session API
+session="$(curl --silent -X POST -H "Content-Type: application/json" -d "{\"username\": \"$apiUsername\", \"password\": \"$apiPassword\"}" "$siteURL$sessionAPI")"
+
+# Check the login credentials
+if echo "$session" | grep "Invalid credentials"; then
+    echo "Invalid login credentials, bailing!" >&2
+    exit 1
+fi
+
+# Get the session ID
+sessionID="$(echo "$session" | grep -Eo '"id":.*"' | awk -F '"' '{print $4}')"
 
 if [ -z "$sessionID" ]; then
     echo "Failed to get session id, bailing!" >&2
