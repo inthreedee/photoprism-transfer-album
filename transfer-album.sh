@@ -33,16 +33,16 @@ shopt -s globstar
 
 # Handle executing commands
 function logexec() {
-    if [ -z "$dryRunFile" ] && [ -z "$verbosity" ]; then
+    if [ "$dryRun" = "true" ]; then
+        # Dry-run mode
+        printf 'Exec: %s\n' "$*" >&2
+    elif [ "$verbosity" -eq 1 ]; then
+        # Verbose mode
+        printf 'Exec: %s\n' "$*" >&2
+        "$@"
+    elif [ "$verbosity" -eq 0 ]; then
         # Normal operation
         "$@"
-    elif [ -z "$dryRunFile" ] && [ "$verbosity" -eq 1 ]; then
-        # Verbose mode
-        printf 'Exec: %q\n' "$@"
-        "$@"
-    elif [ ! -z "$dryRunFile" ]; then
-        # Dry-run mode
-        printf "%q\n" "$@" | tee -a "$dryRunFile"
     else
         # Oopsie mode
         echo "Script error: Unexpected condition in logexec() function" >&2
@@ -133,7 +133,7 @@ function import_album() {
     echo "Creating album $albumTitle..."
     albumUID="$(api_call -X POST \
         -d "{\"Title\": \"$albumTitle\", \"Description\": \"$albumDescription\"}" \
-        "$siteURL$albumAPI" 2>&1 \
+        "$siteURL$albumAPI" \
         | grep -Eo '"UID":.*"' \
         | awk -F '"' '{print $4}')"
     echo "Album UID: $albumUID"
@@ -275,7 +275,7 @@ Usage: transfer-album.sh <options>
                            to the API (default: true, hash mode only)
                            Instead, add photos one at a time as they are found
   -c, --config [file]      Specify an optional configuration file
-  -r, --dry-run            Dump commands to a file instead of executing them
+  -r, --dry-run            Print commands instead of executing them
   -v, --verbose            Print each command as it is executed
   -h, --help               Display this help
 "
@@ -378,10 +378,11 @@ Usage: transfer-album.sh <options>
                 fi
                 ;;
             --dry-run | -r )
-                dryRunFile="$2"
-                # Create an empty file and directory structure
-                install -m 644 /dev/null "$logFile"
+                dryRun="true"
                 
+                echo "Dry run mode enabled. Printing commands to stdout."
+                echo ""
+
                 # Shift to the next argument
                 shift
                 ;;
@@ -405,6 +406,12 @@ if [ -z "$batching" ]; then
 fi
 if [ -z "$matching" ]; then
     matching="hash"
+fi
+if [ -z "$dryRun" ]; then
+    dryRun="false"
+fi
+if [ -z "$verbosity" ]; then
+    verbosity=0
 fi
 
 # Prompt user for input if necessary
@@ -440,7 +447,7 @@ fi
 echo "Creating session..."
 sessionID="$(logexec curl --silent -X POST -H "Content-Type: application/json" -d "{\"username\": \"$apiUsername\", \"password\": \"$apiPassword\"}" "$siteURL$sessionAPI" | grep -Eo '"id":.*"' | awk -F '"' '{print $4}')"
 
-if [ -z "$sessionID" ]; then
+if [ -z "$sessionID" ] && [ "$dryRun" = "false" ]; then
     echo "Failed to get session id, bailing!" >&2
     exit 1
 fi
