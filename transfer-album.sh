@@ -21,6 +21,11 @@
 #
 # Please note: Large photo libraries can take a while to process
 #
+#
+# made with <3
+# Author: https://github.com/inthreedee
+# Contributor: https://github.com/cincodenada
+#
 # License: GPLv3
 ############################################################################
 
