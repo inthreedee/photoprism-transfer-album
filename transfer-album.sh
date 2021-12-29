@@ -43,7 +43,15 @@ runDir="$(realpath "$0" | xargs dirname)"
 shopt -s globstar
 
 function api_call() {
-    curl --silent -H "Content-Type: application/json" -H "X-Session-ID: $sessionID" "$@"
+    response="$(curl --silent -H "Content-Type: application/json" -H "X-Session-ID: $sessionID" "$@")"
+
+    # Check the response
+    if echo "$response" | grep "Invalid request" >/dev/null; then
+        echo "Invalid API request, bailing!" >&2
+        exit 1
+    fi
+    
+    return "$response"
 }
 
 # Get a specific field from a json file
@@ -170,7 +178,7 @@ function import_album() {
                     batchCount=1
                 fi
             else
-                api_call -X POST -d "{\"photos\": \[\"$photoUID\"\]}" "$siteURL$albumPhotosAPI" >/dev/null
+                api_call -X POST -d "{\"photos\": [\"$photoUID\"]}" "$siteURL$albumPhotosAPI" >/dev/null
             fi
         done
 
@@ -209,15 +217,15 @@ function import_album() {
 
                     # Send an API request to add the photo to the album
                     echo "Adding photo $photoUID to album..."
-                    api_call -X POST -d "{\"photos\": \[\"$photoUID\"\]}" "$siteURL$albumPhotosAPI" >/dev/null
-                    
+                    api_call -X POST -d "{\"photos\": [\"$photoUID\"]}" "$siteURL$albumPhotosAPI" >/dev/null
+
                     # Stop processing sidecar files for this json
                     break
                 fi
             done
             
             if [ "$found" -eq 0 ]; then
-                echo "WARNING: No match found for $googleFile!"
+                echo "WARN: No match found for $googleFile!"
             fi
             
             count="$((count+1))"
@@ -420,7 +428,7 @@ echo "Creating session..."
 session="$(curl --silent -X POST -H "Content-Type: application/json" -d "{\"username\": \"$apiUsername\", \"password\": \"$apiPassword\"}" "$siteURL$sessionAPI")"
 
 # Check the login credentials
-if echo "$session" | grep "Invalid credentials"; then
+if echo "$session" | grep "Invalid credentials" >/dev/null; then
     echo "Invalid login credentials, bailing!" >&2
     exit 1
 fi
