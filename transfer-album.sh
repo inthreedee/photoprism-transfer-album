@@ -28,27 +28,8 @@ runDir="$(realpath "$0" | xargs dirname)"
 
 shopt -s globstar
 
-# Handle executing commands
-function logexec() {
-    if [ "$dryRun" = "true" ]; then
-        # Dry-run mode
-        printf 'Exec: %s\n' "$*" >&2
-    elif [ "$verbosity" -eq 1 ]; then
-        # Verbose mode
-        printf 'Exec: %s\n' "$*" >&2
-        "$@"
-    elif [ "$verbosity" -eq 0 ]; then
-        # Normal operation
-        "$@"
-    else
-        # Oopsie mode
-        echo "Script error: Unexpected condition in logexec() function" >&2
-        exit 1
-    fi
-}
-
 function api_call() {
-    logexec curl --silent -H "Content-Type: application/json" -H "X-Session-ID: $sessionID" "$@"
+    curl --silent -H "Content-Type: application/json" -H "X-Session-ID: $sessionID" "$@"
 }
 
 # Get a specific field from a json file
@@ -272,8 +253,6 @@ Usage: transfer-album.sh <options>
                            to the API (default: true, hash mode only)
                            Instead, add photos one at a time as they are found
   -c, --config [file]      Specify an optional configuration file
-  -r, --dry-run            Print commands instead of executing them
-  -v, --verbose            Print each command as it is executed
   -h, --help               Display this help
 "
                 exit 0
@@ -374,21 +353,6 @@ Usage: transfer-album.sh <options>
                     shift 2
                 fi
                 ;;
-            --dry-run | -r )
-                dryRun="true"
-                
-                echo "Dry run mode enabled. Printing commands to stdout."
-                echo ""
-
-                # Shift to the next argument
-                shift
-                ;;
-            --verbose | -v )
-                verbosity=1
-                
-                # Shift to the next argument
-                shift
-                ;;
             * )
                 echo -e "Invalid option '$1'\nUse -h for help" >&2
                 exit 0
@@ -403,12 +367,6 @@ if [ -z "$batching" ]; then
 fi
 if [ -z "$matching" ]; then
     matching="hash"
-fi
-if [ -z "$dryRun" ]; then
-    dryRun="false"
-fi
-if [ -z "$verbosity" ]; then
-    verbosity=0
 fi
 
 # Prompt user for input if necessary
@@ -442,9 +400,10 @@ fi
 
 # Create a new session
 echo "Creating session..."
-sessionID="$(logexec curl --silent -X POST -H "Content-Type: application/json" -d "{\"username\": \"$apiUsername\", \"password\": \"$apiPassword\"}" "$siteURL$sessionAPI" | grep -Eo '"id":.*"' | awk -F '"' '{print $4}')"
 
-if [ -z "$sessionID" ] && [ "$dryRun" = "false" ]; then
+sessionID="$(curl --silent -X POST -H "Content-Type: application/json" -d "{\"username\": \"$apiUsername\", \"password\": \"$apiPassword\"}" "$siteURL$sessionAPI" | grep -Eo '"id":.*"' | awk -F '"' '{print $4}')"
+
+if [ -z "$sessionID" ]; then
     echo "Failed to get session id, bailing!" >&2
     exit 1
 fi
