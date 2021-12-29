@@ -24,9 +24,6 @@ fileAPI="/api/v1/files"
 # Get the location of this script
 runDir="$(realpath "$0" | xargs dirname)"
 
-# Log file for dry-run mode
-logFile="$runDir/transfer-album.log"
-
 ############################################################################
 
 shopt -s globstar
