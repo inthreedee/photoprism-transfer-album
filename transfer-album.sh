@@ -73,7 +73,6 @@ function make_json_array() {
 
 function add_album_files() {
     albumUID="$1"; shift
-    albumPhotosAPI="$albumAPI/$albumUID/photos"
 
     # Send an API request to add the photo to the album
     jsonArray="$(make_json_array "$@")"
@@ -128,7 +127,9 @@ function import_album() {
         "$siteURL$albumAPI" \
         | grep -Eo '"UID":.*"' \
         | awk -F '"' '{print $4}')"
+
     echo "Album UID: $albumUID"
+    albumPhotosAPI="$albumAPI/$albumUID/photos"
 
     # Scan for photos
     if [ "$matching" = "hash" ]; then
