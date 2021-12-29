@@ -1,5 +1,5 @@
 # Google Photos album to Photoprism Album
-*A somewhat involved script to import albums from a Google Photos Takeout as albums in Photoprism*
+*A script to import albums from a Google Photos Takeout*
 
 Photoprism does not yet support transferring albums from Google Photos.  Once a library 
 has been fully transferred, this script will scrape the necessary data from a Google 
