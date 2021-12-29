@@ -1,39 +1,65 @@
 # Google Photos album to Photoprism Album
 *A somewhat involved script to import albums from a Google Photos Takeout as albums in Photoprism*
 
-Photoprism does not yet support transferring albums from Google Photos.  Once a library
-has been fully transferred, this script will scrape the necessary data from a Google
-Takeout of an album and use it to generate a new Photoprism album without duplicating any
-files. Note: you must import and fully index the photos in your Google Photos export before
+Photoprism does not yet support transferring albums from Google Photos.  Once a library 
+has been fully transferred, this script will scrape the necessary data from a Google 
+Takeout of an album and use it to generate a new Photoprism album without duplicating any 
+files.
+
+Note: You must import and fully index the photos in your Google Photos takeout before 
 running this script! It depends heavily on the photos already being in Photoprism's database.
-
-This is a fork of [inthreedee's original script][upstream], and I am very
-grateful to them for doing all the annoying API work for me and providing a
-solid base to work from. A thousand thanks! This fork was inspired by and incorporates
-[StephenBrown2's suggestion][insight] to look up files via their SHA-1 hash,
-which simplifies and speeds things up considerably - look ma, no sidecar
-directory! It also includes various usability improvements such as batching
-photo IDs, extracting titles and descriptions from Google's metadata, reading
-configuration from a file or interactive prompting, and importing an entire
-export in one go.
-
+  
 [upstream]: https://github.com/inthreedee/photoprism-transfer-album
 [insight]: https://github.com/photoprism/photoprism/issues/869#issuecomment-779488150
 
 ## To use this script:
 
 1. Download the desired albums, or your whole collection, via Google Takeout.
-2. (Optional) Add a config.ini, see below.
-3. Run the script in the Takeout directory alongside the album and respond to any prompts.
+2. Upload your Takeout photos or the original photos to Photoprism.
+3. (Optional) Add a config.ini, see below.
+4. Run the script in the Takeout directory alongside the album and respond to any prompts.
 
-## Configuration:
+## Options:
+```
+Usage: transfer-album.sh <options>
+  -a, --import-all         Import all photo albums (default)
+  -n, --album-name [name]  Specify a single album name to import
+  -d, --takeout-dir [dir]  Specify an alternate Google Takeout directory
+                           Defaults to the current working directory
+  -s, --sidecar-dir [dir]  Specify the sidecar directory (name matching only)
+  -m, --match [option]     Set the method used to match/identify photos
+                           Valid options: hash/name - Default matching: hash
+  -b, --batching [option]  Set to true/false to enable/disable batch submitting
+                           to the API (default: true, hash mode only)
+                           Instead, add photos one at a time as they are found
+  -c, --config [file]      Specify an optional configuration file
+  -h, --help               Display this help
+```
 
-The script accepts one optional command line parameter, a directory to import. If one is not
-provided, it will use the current working directory.
+If `--album-name` is not specified, all albums will be imported.
+ - Google Photos automatically generates some albums (ie, hangouts albums, albums by year, or albums by date). 
+   These will be skipped. Force import of one of these albums by specifying it with `--album-name`.
 
-The script will prompt interactively for all the configuration it needs, but you can also
-provide it non-interactively either by providing environment variables, or placing a
-`config.ini` file in the directory you are running the script from. An example file:
+If `--takeout-dir` is not specified, it will use the current working directory.
+- In this case, the script can be run either in a single album directory, or in the base Google Photos 
+  directory. If it finds a `metadata.json` in the given directory it will import it as a 
+  single album, otherwise it will try to import each subdirectory as an album.
+
+If `--match` is not specified, hash mode will be used.
+- Use hash matching if you've uploaded photos from your Google Takeout and 
+  the files in Photoprism and Google Photos are identical. This is faster.
+- Use name matching if you've uploaded original photos from another source 
+  and you just want to re-create your google Photos albums in Photoprism.
+
+If `--batching` is not specified, it defaults to true for hash matching mode. 
+Name matching mode does not currently support batch submission to the API.
+
+## Optional config file:
+The script will prompt interactively for all the information it needs. 
+An optional config file can be specified with `--config` to define 
+the site URL, username, and password.
+
+An example `config.conf`:
 
 ```
 API_USERNAME=admin
@@ -41,28 +67,28 @@ API_PASSWORD=your really good password
 SITE_URL=https://photos.example.com
 ```
 
-If you're setting environment variables, use the same variable names as in the config file.
-
 ## What it does:
 
 1. For each album, it creates a new Photoprism album with the title and description from
    the album's `metadata.json`.
+
+*Then, in hash matching mode*
+
 2. It scans all files in the album's directory, hashing any non-JSON files.
 3. It looks up each file in the database by its hash using Photoprism's files API.
 4. If it finds a match, it adds the photo's UID to the current album's list.
-5. When all files or processed, or every time it has gathered 999 files, an API request 
+5. When all files are processed, or every time it has gathered 999 files, an API request 
    is sent to the server to add the gathered photos to the album.
+
+*Or, in name matching mode*
+
+2. It scans the json files in the Google Takeout directory, pulling out the title field.
+3. It scans the yml files in the Photoprism sidecar directory, attempting to find a matching filename.
+4. Once it finds a match, it pulls the photo's UID from the yml file.
+5. An API request is sent to the server to add that UID to the album.
 
 ## Notes:
 
-- This script can be run either in a single album directory, or in the base Google Photos
-directory. If it finds a `metadata.json` in the given directory it will import it as a
-single album, otherwise it will try to import each subdirectory as an album.
-- As written, the script will ignore auto-generated albums - specifically, albums without
-titles, albums that start with a `YYYY-MM-DD` date or `Hangout:`, or albums with a
-description indicating they are autogenerated. If you would like to import any of these,
-you can comment out the relevant if statement in the script (that is, add a `#` at the
-beginning of each line from the `if` up through the next `fi` below the appropriate comment).
 - Because there are a lot of API calls involved (one for each file!) it's fastest to run
 this on the machine that is running PhotoPrism, but it will also work just fine if you
 run it on a local copy of your Google Takeout while accessing your PhotoPrism instance
@@ -71,26 +97,8 @@ over the web.
 creates things in Photoprism using the API - likely worst case is, you have a bunch of broken
 albums you have to delete. That said, as always with strange scripts off the internet, use at
 our own risk, peek under the hood if you're concerned, etc.
-- It should also be robust and efficient - it successfully processed my Google Photos dump
-with 35,000+ photos and 60 albums with up to hundreds of photos each in the space of a few
-minutes. The batching logic has been tested with 1000+ placeholder files, but not with an
-actual album. If you have such an album, let me know if it worked or not!
-- The script is _very_ verbose - you can comment out the bodies of the `log` and `logexec`
-functions if you want less noise, or just pipe stderr to /dev/null.
 
 ## Notes you probably don't care about:
 
-- There's an extra flag available that isn't documented (except here): you can run it with
-`-c <filename>` as the first arguments, and it will run in a dry-run mode, dumping all of
-the commands it would have run into the specified file, so you can take a peek. Note that
-this file will not actually work if you try to run it as a script, because you have to 
-actually create the album to get the album to get its ID to then add the album photos.
-But if you want to make sure the script seems like it's doing what you want, there ya go.
-- There's a lot of weird bash nonsense going on to log the commands that we're running -
-it should still be pretty compatible with any remotely modern bash-compatible shell, but
-if the curl commands seem like they're getting screwed up, you can remove the `logexec`
-from the `api_call()` method, and it will bypass the most arcane bash stuff. You can also
-walk disable the file batching and submit the album files one at a time to bypass more
-complicated stuff, there's a comment block about that in the main loop.
 - Yes, this script parses JSON with `awk` and constructs JSON with bash loops. It works
 fine. There's a commented-out line to do most parsing with `jq` if it makes you feel better.
