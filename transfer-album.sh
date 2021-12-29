@@ -6,10 +6,11 @@
 # To use this script:
 #
 # 1. Download the desired album via Google Takeout.
-# 2. (Optional) Add a config.ini in the directory you're running the
+# 2. Upload your Takeout photos or the original photos to Photoprism.
+# 3. (Optional) Add a config.ini in the directory you're running the
 #    script, defining the variables API_USERNAME, API_PASSWORD, SITE_URL
 #    This file should be bash-compatible, as it is simply sourced.
-# 3. Run the script. It will prompt interactively for any needed info.
+# 4. Run the script. It will prompt interactively for any needed info.
 #
 # There are two methods of matching/identifying photos: By hash or by name.
 #  - Use hash matching if you uploaded photos from your Google Takeout and
@@ -245,9 +246,9 @@ Use --album-name to specify any single album to upload.
 This will also bypass the auto-generated album checks.
 
 There are two methods of matching/identifying photos: By hash or by name.
-- Use hash matching if you uploaded photos from your Google Takeout and
-  the files Photoprism and Google Photos are identical. This is faster.
-- Use name matching if you uploaded original photos from another source
+- Use hash matching if you've uploaded photos from your Google Takeout and
+  the files in Photoprism and Google Photos are identical. This is faster.
+- Use name matching if you've uploaded original photos from another source
   and you just want to re-create your google Photos albums in Photoprism.
 See --match below.
 
