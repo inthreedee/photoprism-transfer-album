@@ -434,7 +434,7 @@ fi
 
 # Get the sidecar directory if needed
 if [ "$matching" = "name" ] && [ -z "$sidecarDirectory" ]; then
-    while read -rp 'Path to sidecar directory? ' sidecarDirectory; do
+    while read -rp 'Path to Photoprism sidecar directory? ' sidecarDirectory; do
         if [ ! -d "$sidecarDirectory" ]; then
             echo "That directory is invalid or does not exist. Please try again."
         else
