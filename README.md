@@ -91,16 +91,3 @@ SITE_URL=https://photos.example.com
 3. It scans the yml files in the Photoprism sidecar directory, attempting to find a matching filename.
 4. Once it finds a match, it pulls the photo's UID from the yml file.
 5. An API request is sent to the server to add that UID to the album.
-
-## Notes:
-
-- Because there are a lot of API calls involved (one for each file!) it's fastest to run
-this on the machine that is running PhotoPrism, but it will also work just fine if you
-run it on a local copy of your Google Takeout while accessing your PhotoPrism instance
-over the web.
-- This script should be pretty safe, it does no modifications of the filesystem, and only
-creates things in Photoprism using the API - likely worst case is, you have a bunch of broken
-albums you have to delete. That said, as always with strange scripts off the internet, use at
-our own risk, peek under the hood if you're concerned, etc.
-- Yes, this script parses JSON with `awk` and constructs JSON with bash loops. It works
-fine. There's a commented-out line to do most parsing with `jq` if it makes you feel better.
