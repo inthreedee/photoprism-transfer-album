@@ -83,7 +83,7 @@ function add_album_files() {
     albumUID="$1"; shift
 
     # Send an API request to add the photo to the album
-    jsonArray="$(make_json_array "$@")"
+    jsonArray="$(make_json_array $@)"
     echo "Submitting batch to album id $albumUID"
     api_call -X POST -d "{\"photos\": $jsonArray}" "$siteURL$albumPhotosAPI" >/dev/null
 }
@@ -144,7 +144,6 @@ function import_album() {
         # Photos are looked up via their SHA-1 hashes using the /files API
         echo "Adding photos..."
         count=1
-        batchFiles=""
         batchCount=1
         # Scan the album directory for photos
         for albumFile in "$albumDir"/**/*.*; do
@@ -165,9 +164,10 @@ function import_album() {
                 continue
             fi
 
-            echo "$count: Adding $albumFile with hash $fileSHA and id $photoUID to album..."
-            
             if [ "$batching" = "true" ]; then
+                # Using batches.
+                echo "$count: Adding $albumFile with hash $fileSHA and uid $photoUID to batch..."
+
                 batchIds="$batchIds $photoUID"
                 count="$(($count+1))"
                 batchCount="$(($batchCount+1))"
@@ -178,11 +178,13 @@ function import_album() {
                     batchCount=1
                 fi
             else
+                # Not using batches. Just add the photo
+                echo "$count: Adding $albumFile with hash $fileSHA and id $photoUID to album..."
                 api_call -X POST -d "{\"photos\": [\"$photoUID\"]}" "$siteURL$albumPhotosAPI" >/dev/null
             fi
         done
 
-        if [ "$batching" = "true" ] && [ -n "$batchFiles" ]; then
+        if [ "$batching" = "true" ] && [ "$batchCount" -gt 1 ]; then
             add_album_files "$albumUID" "$batchIds"
             batchIds=""
         fi
@@ -293,7 +295,7 @@ Usage: transfer-album.sh <options>
                 elif [ -z "$2" ]; then
                     echo "Usage: transfer-album $1 \"Album Name\"" >&2
                     exit 1
-                elif [ ! -z "$specifiedAlbum" ]; then
+                elif [ -n "$specifiedAlbum" ]; then
                     echo "Only one album can be specified at a time. Use -a to import all albums" >&2
                     exit 1
                 fi
@@ -348,7 +350,7 @@ Usage: transfer-album.sh <options>
                 if [ -z "$2" ]; then
                     echo "Usage: transfer-album $1 [true/false]" >&2
                     exit 1
-                elif [ "$2" != "true" ] || [ "$2" != "false" ]; then
+                elif [ "$2" != "true" ] && [ "$2" != "false" ]; then
                     echo "Usage: transfer-album $1 [true/false]" >&2
                     exit 1
                 else
@@ -447,7 +449,7 @@ echo "Session created."
 trap 'echo "Deleting session..." && api_call -X DELETE "$siteURL$sessionAPI/$sessionID" >/dev/null' EXIT
 
 # Run the imports
-if [ ! -z "$specifiedAlbum" ]; then
+if [ -n "$specifiedAlbum" ]; then
     # Importing a single specified album
     if [ "$specifiedAlbum" = "$(pwd | xargs basename)" ]; then
         # We're already working in the right directory
