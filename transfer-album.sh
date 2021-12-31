@@ -61,7 +61,8 @@ function get_json_field() {
     filename="$2"
 
     # This assumes a nicely formatted JSON with one key:value pair per line and no escaped quotes
-    awk -F '"' '/"'"$field"'":/ { print $4 }' "$filename"
+    # It prints the first match only, ignoring the rest
+    awk -F '"' '/"'"$field"'":/ {print $4;exit;}' "$filename"
     # This is more robust but only works if you have jq installed
     #jq -r '.albumData["'"$field"'"]' "$filename"
 }
