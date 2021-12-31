@@ -19,8 +19,14 @@ running this script! It depends heavily on the photos already being in Photopris
 3. (Optional) Add a config.ini, see below.
 4. Run the script in the Takeout directory alongside the album and respond to any prompts.
 
-Tip: Pipe the output to tee to watch it run and save the output to a file for easy grepping:
+## Tip:
+Pipe the output to tee to watch it run and save the output to a file:
 `./transfer-album.sh [options] | tee output.log`
+
+Then, use grep to list the photos that couldn't be matched:
+`grep WARN output.log > failures.log`
+
+
 
 ## Options:
 ```
