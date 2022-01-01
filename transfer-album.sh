@@ -335,7 +335,7 @@ There are two methods of matching/identifying photos: By hash or by name.
   and you just want to re-create your google Photos albums in Photoprism.
 See --match below.
 
-By default, hash matching also batches photo submissions to the API for speed.
+By default, matched photos are batched for bulk submission to the API.
 If this causes problems, see --batching below to disable it.
 
 Usage: transfer-album.sh <options>
@@ -347,8 +347,8 @@ Usage: transfer-album.sh <options>
   -m, --match [option]     Set the method used to match/identify photos
                            Valid options: hash/name - Default matching: hash
   -b, --batching [option]  Set to true/false to enable/disable batch submitting
-                           to the API (default: true, hash mode only)
-                           Instead, add photos one at a time as they are found
+                           to the API. When false, photos are submitted
+                           the the API one at a time. (default: true)
   -c, --config [file]      Specify an optional configuration file
   -h, --help               Display this help
 "
