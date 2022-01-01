@@ -93,6 +93,6 @@ SITE_URL=https://photos.example.com
 
 2. It scans the json files in the Google Takeout directory, pulling out the title field.
 3. It scans the yml files in the Photoprism sidecar directory, attempting to find a matching filename.
-4. Once it finds a match, it pulls the photo's UID from the yml file and adds it to the album's batching list.
+4. If it finds a match, it pulls the photo's UID from the yml file and adds it to the album's batching list.
 5. When all files are processed or every time it has gathered 999 files, an API request 
    is sent to the server to add the gathered photos to the album.
