@@ -7,7 +7,7 @@ Takeout of an album and use it to generate a new Photoprism album without duplic
 files.
 
 Note: You must import and fully index the photos in your Google Photos takeout before 
-running this script! It depends heavily on the photos already being in Photoprism's database.
+running this script!
   
 [upstream]: https://github.com/inthreedee/photoprism-transfer-album
 [insight]: https://github.com/photoprism/photoprism/issues/869#issuecomment-779488150
