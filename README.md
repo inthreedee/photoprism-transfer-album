@@ -39,8 +39,8 @@ Usage: transfer-album.sh <options>
   -m, --match [option]     Set the method used to match/identify photos
                            Valid options: hash/name - Default matching: hash
   -b, --batching [option]  Set to true/false to enable/disable batch submitting
-                           to the API (default: true, hash mode only)
-                           Instead, add photos one at a time as they are found
+                           to the API. When false, photos are submitted
+                           the the API one at a time. (default: true)
   -c, --config [file]      Specify an optional configuration file
   -h, --help               Display this help
 ```
@@ -60,10 +60,8 @@ If `--match` is not specified, hash mode will be used.
 - Use name matching if you've uploaded original photos from another source 
   and you just want to re-create your google Photos albums in Photoprism.
 
-If `--batching` is not specified, it defaults to true for hash matching mode 
-and false for name matching mode. 
-Disabling batching will submit photos to the API one at a time as matches are found. 
-Batching currently has no effect in name matching mode.
+If `--batching` is not specified, it defaults to true.
+Disabling batching will submit photos to the API one at a time as matches are found.
 
 ## Optional config file:
 The script will prompt interactively for all the information it needs. 
@@ -87,13 +85,14 @@ SITE_URL=https://photos.example.com
 
 2. It scans all files in the album's directory, hashing any non-JSON files.
 3. It looks up each file in the database by its hash using Photoprism's files API.
-4. If it finds a match, it adds the photo's UID to the current album's list.
-5. When all files are processed, or every time it has gathered 999 files, an API request 
+4. If it finds a match, it adds the photo's UID to the album's batching list.
+5. When all files are processed or every time it has gathered 999 files, an API request 
    is sent to the server to add the gathered photos to the album.
 
 *Or, in name matching mode*
 
 2. It scans the json files in the Google Takeout directory, pulling out the title field.
 3. It scans the yml files in the Photoprism sidecar directory, attempting to find a matching filename.
-4. Once it finds a match, it pulls the photo's UID from the yml file.
-5. An API request is sent to the server to add that UID to the album.
+4. Once it finds a match, it pulls the photo's UID from the yml file and adds it to the album's batching list.
+5. When all files are processed or every time it has gathered 999 files, an API request 
+   is sent to the server to add the gathered photos to the album.
