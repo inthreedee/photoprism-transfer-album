@@ -16,8 +16,10 @@ running this script!
 
 1. Download the desired albums, or your whole collection, via Google Takeout.
 2. Upload your Takeout photos or the original photos to Photoprism.
-3. (Optional) Add a config.ini, see below.
-4. Run the script in the Takeout directory alongside the album and respond to any prompts.
+3. Run the script in the Takeout directory alongside the albums and respond to any prompts.
+
+*Note:* If photos were uploaded from an original source in step 2 (not Google Takeout), 
+use `--match name` as described below. Photoprism's sidecar yml files will be required.
 
 ## Tip:
 Pipe the output to tee to watch it run and save the output to a file:
@@ -56,9 +58,10 @@ If `--takeout-dir` is not specified, it will use the current working directory.
 
 If `--match` is not specified, hash mode will be used.
 - Use hash matching if you've uploaded photos from your Google Takeout and 
-  the files in Photoprism and Google Photos are identical. This method is faster.
+  the files in Photoprism and Google Photos are identical. This method is significantly faster.
 - Use name matching if you've uploaded original photos from another source 
   and you just want to re-create your google Photos albums in Photoprism.
+  Photoprism's sidecar directory, or a copy containing the yml files, must be available to the script.
 
 If `--batching` is not specified, it defaults to true.
 Disabling batching will submit photos to the API one at a time as matches are found.
