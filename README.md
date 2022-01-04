@@ -1,9 +1,9 @@
-# Google Photos album to Photoprism Album
+# Google Photos album to PhotoPrism Album
 *A script to import albums from a Google Photos Takeout*
 
-Photoprism does not yet support transferring albums from Google Photos.  Once a library 
+PhotoPrism does not yet support transferring albums from Google Photos.  Once a library 
 has been fully transferred, this script will scrape the necessary data from a Google 
-Takeout of an album and use it to generate a new Photoprism album without duplicating any 
+Takeout of an album and use it to generate a new PhotoPrism album without duplicating any 
 files.
 
 Note: You must import and fully index the photos in your Google Photos takeout before 
@@ -15,11 +15,11 @@ running this script!
 ## To use this script:
 
 1. Download the desired albums, or your whole collection, via Google Takeout.
-2. Upload your Takeout photos or the original photos to Photoprism.
+2. Upload your Takeout photos or the original photos to PhotoPrism.
 3. Run the script in the Takeout directory alongside the albums and respond to any prompts.
 
 *Note:* If photos were uploaded from an original source in step 2 (not Google Takeout), 
-use `--match name` as described below. Photoprism's sidecar yml files will be required.
+use `--match name` as described below. PhotoPrism's sidecar yml files will be required.
 
 ## Tip:
 Pipe the output to tee to watch it run and save the output to a file:
@@ -58,10 +58,10 @@ If `--takeout-dir` is not specified, it will use the current working directory.
 
 If `--match` is not specified, hash mode will be used.
 - Use hash matching if you've uploaded photos from your Google Takeout and 
-  the files in Photoprism and Google Photos are identical. This method is significantly faster.
+  the files in PhotoPrism and Google Photos are identical. This method is significantly faster.
 - Use name matching if you've uploaded original photos from another source 
-  and you just want to re-create your google Photos albums in Photoprism.
-  Photoprism's sidecar directory, or a copy containing the yml files, must be available to the script.
+  and you just want to re-create your google Photos albums in PhotoPrism.
+  PhotoPrism's sidecar directory, or a copy containing the yml files, must be available to the script.
 
 If `--batching` is not specified, it defaults to true.
 Disabling batching will submit photos to the API one at a time as matches are found.
@@ -81,13 +81,13 @@ SITE_URL=https://photos.example.com
 
 ## What it does:
 
-1. For each album, it creates a new Photoprism album with the title and description from
+1. For each album, it creates a new PhotoPrism album with the title and description from
    the album's `metadata.json`.
 
 *Then, in hash matching mode*
 
 2. It scans all files in the album's directory, hashing any non-JSON files.
-3. It looks up each file in the database by its hash using Photoprism's files API.
+3. It looks up each file in the database by its hash using PhotoPrism's files API.
 4. If it finds a match, it adds the photo's UID to the album's batching list.
 5. When all files are processed or every time it has gathered 999 files, an API request 
    is sent to the server to add the gathered photos to the album.
@@ -95,7 +95,7 @@ SITE_URL=https://photos.example.com
 *Or, in name matching mode*
 
 2. It scans the json files in the Google Takeout directory, pulling out the title field.
-3. It scans the yml files in the Photoprism sidecar directory, attempting to find a matching filename.
+3. It scans the yml files in the PhotoPrism sidecar directory, attempting to find a matching filename.
 4. If it finds a match, it pulls the photo's UID from the yml file and adds it to the album's batching list.
 5. When all files are processed or every time it has gathered 999 files, an API request 
    is sent to the server to add the gathered photos to the album.
