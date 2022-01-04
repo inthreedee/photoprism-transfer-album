@@ -15,15 +15,15 @@ running this script!  This script does not upload any photos for you.
 ## To use this script:
 
 1. Download the desired albums, or your whole collection, via Google Takeout.
-2. Add your Takeout photos or the original photos to PhotoPrism's import or originals directory.
-3. Import or index your files.
-4. Run the script in the Takeout directory alongside the albums and respond to any prompts.
+2. If your Google language settings are set to a language other than English, 
+   verify that a `metadata.json` file exists within the Takeout's album directories. 
+   You may need to rename the file for this script to find it.
+4. Add your Takeout photos or the original photos to PhotoPrism's import or originals directory.
+5. Import or index your files.
+6. Run the script in the Takeout directory alongside the albums and respond to any prompts.
 
 *Note:* If photos were uploaded from an original source in step 2 (not Google Takeout), 
 use `--match name` as described below. PhotoPrism's sidecar yml files will be required.
-
-*Note:* This script relies on metadata.json files created by Google Takeout. Depending on your language settings from Google Photos those json files might be named differently (e.g. "Metadaten.json").
-In this case just rename the files to "metadata.json" before running the script.
 
 ## Tip:
 Pipe the output to tee to watch it run and save the output to a file:
