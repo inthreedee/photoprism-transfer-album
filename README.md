@@ -1,12 +1,12 @@
 # Google Photos album to PhotoPrism Album
-*A script to import albums from a Google Photos Takeout*
+*A script to create albums from a Google Photos Takeout in PhotoPrism*
 
 PhotoPrism does not yet support transferring albums from Google Photos.  Once a library 
 has been fully transferred, this script will scrape the necessary data from a Google 
 Takeout of an album and then, using the PhotoPrism API, create a new PhotoPrism 
 album and populate it with the matching photos.
 
-Note: You must import and fully index the photos in your Google Photos takeout before 
+Note: You must import or index the photos from your Google Photos Takeout before 
 running this script!  This script does not upload any photos for you.
   
 [upstream]: https://github.com/inthreedee/photoprism-transfer-album
@@ -15,11 +15,15 @@ running this script!  This script does not upload any photos for you.
 ## To use this script:
 
 1. Download the desired albums, or your whole collection, via Google Takeout.
-2. Upload your Takeout photos or the original photos to PhotoPrism.
-3. Run the script in the Takeout directory alongside the albums and respond to any prompts.
+2. Add your Takeout photos or the original photos to PhotoPrism's import or originals directory.
+3. Import or index your files.
+4. Run the script in the Takeout directory alongside the albums and respond to any prompts.
 
 *Note:* If photos were uploaded from an original source in step 2 (not Google Takeout), 
 use `--match name` as described below. PhotoPrism's sidecar yml files will be required.
+
+*Note:* This script relies on metadata.json files created by Google Takeout. Depending on your language settings from Google Photos those json files might be named differently (e.g. "Metadaten.json").
+In this case just rename the files to "metadata.json" before running the script.
 
 ## Tip:
 Pipe the output to tee to watch it run and save the output to a file:
