@@ -3,11 +3,11 @@
 
 PhotoPrism does not yet support transferring albums from Google Photos.  Once a library 
 has been fully transferred, this script will scrape the necessary data from a Google 
-Takeout of an album and use it to generate a new PhotoPrism album without duplicating any 
-files.
+Takeout of an album and then, using the PhotoPrism API, create a new PhotoPrism 
+album and populate it with the matching photos.
 
 Note: You must import or index the photos from your Google Photos Takeout before 
-running this script!
+running this script!  This script does not upload any photos for you.
   
 [upstream]: https://github.com/inthreedee/photoprism-transfer-album
 [insight]: https://github.com/photoprism/photoprism/issues/869#issuecomment-779488150
