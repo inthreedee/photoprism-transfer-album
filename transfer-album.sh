@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
 ###########################################################################
-# Google Album to Photoprism Album Transfer Script
+# Google Album to PhotoPrism Album Transfer Script
 #
 # To use this script:
 #
 # 1. Download the desired album via Google Takeout.
-# 2. Upload your Takeout photos or the original photos to Photoprism.
+# 2. Upload your Takeout photos or the original photos to PhotoPrism.
 # 3. (Optional) Add a config.ini in the directory you're running the
 #    script, defining the variables API_USERNAME, API_PASSWORD, SITE_URL
 #    This file should be bash-compatible, as it is simply sourced.
@@ -14,9 +14,9 @@
 #
 # There are two methods of matching/identifying photos: By hash or by name.
 #  - Use hash matching if you uploaded photos from your Google Takeout and
-#    the files Photoprism and Google Photos are identical. This is faster.
+#    the files PhotoPrism and Google Photos are identical. This is faster.
 #  - Use name matching if you uploaded original photos from another source
-#    and you just want to re-create your google Photos albums in Photoprism.
+#    and you just want to re-create your google Photos albums in PhotoPrism.
 #
 # Call the script with --help for more information.
 #
@@ -42,7 +42,7 @@ runDir="$(realpath "$0" | xargs dirname)"
 
 shopt -s globstar
 
-# Photoprism API request
+# PhotoPrism API request
 function api_call() {
     response="$(curl --silent -H "Content-Type: application/json" -H "X-Session-ID: $sessionID" "$@")"
 
@@ -274,7 +274,7 @@ function import_album() {
             
             echo "$photoCount: Trying to match $googleFile..."
 
-            # Find a matching file in the photoprism sidecar directory
+            # Find a matching file in the PhotoPrism sidecar directory
             found=0
             for ymlFile in "$sidecarDirectory"/**/*.yml; do
                 sidecarFile="$(basename "$ymlFile")"
@@ -334,9 +334,9 @@ This will also bypass the auto-generated album checks.
 
 There are two methods of matching/identifying photos: By hash or by name.
 - Use hash matching if you've uploaded photos from your Google Takeout and
-  the files in Photoprism and Google Photos are identical. This is faster.
+  the files in PhotoPrism and Google Photos are identical. This is faster.
 - Use name matching if you've uploaded original photos from another source
-  and you just want to re-create your google Photos albums in Photoprism.
+  and you just want to re-create your google Photos albums in PhotoPrism.
 See --match below.
 
 By default, matched photos are batched for bulk submission to the API.
@@ -490,7 +490,7 @@ fi
 
 # Get the sidecar directory if needed
 if [ "$matching" = "name" ] && [ -z "$sidecarDirectory" ]; then
-    while read -rp 'Path to Photoprism sidecar directory? ' sidecarDirectory; do
+    while read -rp 'Path to PhotoPrism sidecar directory? ' sidecarDirectory; do
         if [ ! -d "$sidecarDirectory" ]; then
             echo "That directory is invalid or does not exist. Please try again."
         else
@@ -500,7 +500,7 @@ if [ "$matching" = "name" ] && [ -z "$sidecarDirectory" ]; then
 fi
 
 # Create a new session
-echo "Creating Photoprism session..."
+echo "Creating PhotoPrism session..."
 
 # Call the session API
 session="$(curl --silent -X POST -H "Content-Type: application/json" -d "{\"username\": \"$apiUsername\", \"password\": \"$apiPassword\"}" "$siteURL$sessionAPI")"
@@ -522,7 +522,7 @@ fi
 echo -e "Session created.\n"
 
 # Clean up the session on script exit
-trap 'echo -e "\nDeleting Photoprism session..." && api_call -X DELETE "$siteURL$sessionAPI/$sessionID" >/dev/null && echo "Done."' EXIT
+trap 'echo -e "\nDeleting PhotoPrism session..." && api_call -X DELETE "$siteURL$sessionAPI/$sessionID" >/dev/null && echo "Done."' EXIT
 
 # Run the imports
 if [ -n "$specifiedAlbum" ]; then
