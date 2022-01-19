@@ -15,9 +15,7 @@ running this script!  This script does not upload any photos for you.
 ## To use this script:
 
 1. Download the desired albums, or your whole collection, via Google Takeout.
-2. If your Google language settings are set to a language other than English, 
-   verify that a `metadata.json` file exists within the Takeout's album directories. 
-   You may need to rename the file for this script to find it.
+2. If your Google language settings are set to a language other than English, make sure you provide the `--metadata-name` argument to match your language. Simply look it up in your takeout folder.
 4. Add your Takeout photos or the original photos to PhotoPrism's import or originals directory.
 5. Import or index your files.
 6. Run the script in the Takeout directory alongside the albums and respond to any prompts.
@@ -37,18 +35,19 @@ Then, use grep to list the photos that couldn't be matched:
 ## Options:
 ```
 Usage: transfer-album.sh <options>
-  -a, --import-all         Import all photo albums (default)
-  -n, --album-name [name]  Specify a single album name to import
-  -d, --takeout-dir [dir]  Specify an alternate Google Takeout directory
-                           Defaults to the current working directory
-  -s, --sidecar-dir [dir]  Specify the sidecar directory (name matching only)
-  -m, --match [option]     Set the method used to match/identify photos
-                           Valid options: hash/name - Default matching: hash
-  -b, --batching [option]  Set to true/false to enable/disable batch submitting
-                           to the API. When false, photos are submitted
-                           the the API one at a time. (default: true)
-  -c, --config [file]      Specify an optional configuration file
-  -h, --help               Display this help
+  -a, --import-all            Import all photo albums (default)
+  -n, --album-name [name]     Specify a single album name to import
+  -d, --takeout-dir [dir]     Specify an alternate Google Takeout directory
+                              Defaults to the current working directory
+  -s, --sidecar-dir [dir]     Specify the sidecar directory (name matching only)
+      --metadata-name [name]  Specify the name of metadata files. Default: metadata.json
+  -m, --match [option]        Set the method used to match/identify photos
+                              Valid options: hash/name - Default matching: hash
+  -b, --batching [option]     Set to true/false to enable/disable batch submitting
+                              to the API. When false, photos are submitted
+                              the the API one at a time. (default: true)
+  -c, --config [file]         Specify an optional configuration file
+  -h, --help                  Display this help
 ```
 
 If `--album-name` is not specified, all albums will be imported.

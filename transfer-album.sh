@@ -163,10 +163,10 @@ function process_batch() {
 # Import a Google Takeout album
 function import_album() {
     albumDir="$1"
-    metadataFile="$albumDir/metadata.json"
+    metadataFile="$albumDir/$metadataName"
 
     if [ ! -f "$metadataFile" ]; then
-        echo -e "\nSkipping folder \"$albumDir\"; no metadata.json, does not appear to be an album."
+        echo -e "\nSkipping folder \"$albumDir\"; no $metadataName, does not appear to be an album."
         return
     fi
 
@@ -261,7 +261,7 @@ function import_album() {
         echo "Searching jsons..."
         for jsonFile in "$albumDir"/**/*.json; do
             # Don't try to add metadata files
-            if [ "$(basename "$jsonFile")" = "metadata.json" ]; then
+            if [ "$(basename "$jsonFile")" = $metadataName ]; then
                 continue
             fi
             # Get the photo title (filename) from the google json file
@@ -352,7 +352,7 @@ Usage: transfer-album.sh <options>
                            Valid options: hash/name - Default matching: hash
   -b, --batching [option]  Set to true/false to enable/disable batch submitting
                            to the API. When false, photos are submitted
-                           the the API one at a time. (default: true)
+                           to the API one at a time. (default: true)
   -c, --config [file]      Specify an optional configuration file
   -h, --help               Display this help
 "
@@ -454,6 +454,21 @@ Usage: transfer-album.sh <options>
                     shift 2
                 fi
                 ;;
+            --metadata-name )
+                if [ -z "$2" ]; then
+                    echo "Usage: transfer-album $1 metadata.json" >&2
+                    exit 1
+                elif [[ "$2" != *json ]]; then
+                    echo "Metadata filename must have extension '.json'" >&2
+                    exit 1
+                else
+                    # set the metadata filename
+                    metadataName="$2"
+
+                    # Shift to the next agument
+                    shift 2
+                fi
+                ;;
             * )
                 echo -e "Invalid option '$1'\nUse -h for help" >&2
                 exit 0
@@ -542,7 +557,7 @@ if [ -n "$specifiedAlbum" ]; then
             import_album "$foundAlbum"
         fi
     fi
-elif [ -f "metadata.json" ]; then
+elif [ -f $metadataName ]; then
     # If we are being run from an album directory, just import this album
     echo "\"$importDirectory\" appears to be an album; importing in single album mode..."
     import_album "$importDirectory"
