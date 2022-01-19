@@ -15,7 +15,7 @@ running this script!  This script does not upload any photos for you.
 ## To use this script:
 
 1. Download the desired albums, or your whole collection, via Google Takeout.
-2. If your Google language settings are set to a language other than English, make sure you provide the `--metadata-name` argument to match your language. Simply look it up in your takeout folder.
+2. If your Google language settings are set to a language other than English, make sure you provide the `--metadata-name name.json` argument to match your language. Simply look it up in your takeout folder.
 4. Add your Takeout photos or the original photos to PhotoPrism's import or originals directory.
 5. Import or index your files.
 6. Run the script in the Takeout directory alongside the albums and respond to any prompts.

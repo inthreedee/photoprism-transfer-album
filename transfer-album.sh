@@ -343,18 +343,19 @@ By default, matched photos are batched for bulk submission to the API.
 If this causes problems, see --batching below to disable it.
 
 Usage: transfer-album.sh <options>
-  -a, --import-all         Import all photo albums (default)
-  -n, --album-name [name]  Specify a single album name to import
-  -d, --takeout-dir [dir]  Specify an alternate Google Takeout directory
-                           Defaults to the current working directory
-  -s, --sidecar-dir [dir]  Specify the sidecar directory (name matching only)
-  -m, --match [option]     Set the method used to match/identify photos
-                           Valid options: hash/name - Default matching: hash
-  -b, --batching [option]  Set to true/false to enable/disable batch submitting
-                           to the API. When false, photos are submitted
-                           to the API one at a time. (default: true)
-  -c, --config [file]      Specify an optional configuration file
-  -h, --help               Display this help
+  -a, --import-all              Import all photo albums (default)
+  -n, --album-name [name]       Specify a single album name to import
+  -d, --takeout-dir [dir]       Specify an alternate Google Takeout directory
+                                Defaults to the current working directory
+  -s, --sidecar-dir [dir]       Specify the sidecar directory (name matching only)
+      --metadata-name [name]    Specify the name of metadata files. Default: metadata.json
+  -m, --match [option]          Set the method used to match/identify photos
+                                Valid options: hash/name - Default matching: hash
+  -b, --batching [option]       Set to true/false to enable/disable batch submitting
+                                to the API. When false, photos are submitted
+                                to the API one at a time. (default: true)
+  -c, --config [file]           Specify an optional configuration file
+  -h, --help                    Display this help
 "
                 exit 0
                 ;;
