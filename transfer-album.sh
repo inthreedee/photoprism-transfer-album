@@ -484,6 +484,9 @@ fi
 if [ -z "$matching" ]; then
     matching="hash"
 fi
+if [ -z "$metadataFilename" ]; then
+    metadataFilename="metadata.json"
+fi
 
 # Prompt user for input if necessary
 if [ -z "$siteURL" ]; then
