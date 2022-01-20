@@ -416,7 +416,7 @@ Usage: transfer-album.sh <options>
                     exit 1
                 else
                     # set the metadata filename
-                    metadataFilename="$(basename $2 .json).json"
+                    metadataFilename="$(basename "$2" .json).json"
                     echo "Using user-specified metadata file: $metadataFilename"
 
                     # Shift to the next agument
