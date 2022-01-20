@@ -15,7 +15,9 @@ running this script!  This script does not upload any photos for you.
 ## To use this script:
 
 1. Download the desired albums, or your whole collection, via Google Takeout.
-2. If your Google language settings are set to a language other than English, make sure you provide the `--metadata-name name.json` argument to match your language. Simply look it up in your takeout folder.
+2. If your Google language settings are set to a language other than English, look up the filename 
+   in your Takeout and provide the `--metadata-file` argument to match your language. 
+   ie. `Metadaten.json` for German.
 4. Add your Takeout photos or the original photos to PhotoPrism's import or originals directory.
 5. Import or index your files.
 6. Run the script in the Takeout directory alongside the albums and respond to any prompts.
@@ -40,12 +42,13 @@ Usage: transfer-album.sh <options>
   -d, --takeout-dir [dir]     Specify an alternate Google Takeout directory
                               Defaults to the current working directory
   -s, --sidecar-dir [dir]     Specify the sidecar directory (name matching only)
-      --metadata-name [name]  Specify the name of metadata files. Default: metadata.json
+  -j, --metadata-file [name]  Specify the name of metadata files. Set for
+                              non-English languages. Default: metadata.json
   -m, --match [option]        Set the method used to match/identify photos
                               Valid options: hash/name - Default matching: hash
-  -b, --batching [option]     Set to true/false to enable/disable batch submitting
+  -b, --batching [option]     Set to true/false to configure batch submitting
                               to the API. When false, photos are submitted
-                              the the API one at a time. (default: true)
+                              to the API one at a time. (default: true)
   -c, --config [file]         Specify an optional configuration file
   -h, --help                  Display this help
 ```
