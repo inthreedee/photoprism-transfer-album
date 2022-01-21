@@ -166,7 +166,7 @@ function import_album() {
     metadataFile="$albumDir/$metadataFilename"
 
     if [ ! -f "$metadataFile" ]; then
-        echo -e "\nSkipping folder \"$albumDir\"; no $metadataFilename, does not appear to be an album."
+        echo -e "\nSkipping folder \"$albumDir\"; $metadataFilename not found."
         return
     fi
 
