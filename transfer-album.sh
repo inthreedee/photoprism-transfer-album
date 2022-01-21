@@ -26,6 +26,7 @@
 # made with <3
 # Author: https://github.com/inthreedee
 # Contributor: https://github.com/cincodenada
+# Contributor: https://github.com/Trenar
 #
 # License: GPLv3
 ############################################################################
