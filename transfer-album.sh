@@ -163,10 +163,10 @@ function process_batch() {
 # Import a Google Takeout album
 function import_album() {
     albumDir="$1"
-    metadataFile="$albumDir/metadata.json"
+    metadataFile="$albumDir/$metadataFilename"
 
     if [ ! -f "$metadataFile" ]; then
-        echo -e "\nSkipping folder \"$albumDir\"; no metadata.json, does not appear to be an album."
+        echo -e "\nSkipping folder \"$albumDir\"; no $metadataFilename, does not appear to be an album."
         return
     fi
 
@@ -261,7 +261,7 @@ function import_album() {
         echo "Searching jsons..."
         for jsonFile in "$albumDir"/**/*.json; do
             # Don't try to add metadata files
-            if [ "$(basename "$jsonFile")" = "metadata.json" ]; then
+            if [ "$(basename "$jsonFile")" = "$metadataFilename" ]; then
                 continue
             fi
             # Get the photo title (filename) from the google json file
@@ -343,18 +343,20 @@ By default, matched photos are batched for bulk submission to the API.
 If this causes problems, see --batching below to disable it.
 
 Usage: transfer-album.sh <options>
-  -a, --import-all         Import all photo albums (default)
-  -n, --album-name [name]  Specify a single album name to import
-  -d, --takeout-dir [dir]  Specify an alternate Google Takeout directory
-                           Defaults to the current working directory
-  -s, --sidecar-dir [dir]  Specify the sidecar directory (name matching only)
-  -m, --match [option]     Set the method used to match/identify photos
-                           Valid options: hash/name - Default matching: hash
-  -b, --batching [option]  Set to true/false to enable/disable batch submitting
-                           to the API. When false, photos are submitted
-                           the the API one at a time. (default: true)
-  -c, --config [file]      Specify an optional configuration file
-  -h, --help               Display this help
+  -a, --import-all            Import all photo albums (default)
+  -n, --album-name [name]     Specify a single album name to import
+  -d, --takeout-dir [dir]     Specify an alternate Google Takeout directory
+                              Defaults to the current working directory
+  -s, --sidecar-dir [dir]     Specify the sidecar directory (name matching only)
+  -j, --metadata-file [name]  Specify the name of metadata files. Set for
+                              non-English languages. Default: metadata.json
+  -m, --match [option]        Set the method used to match/identify photos
+                              Valid options: hash/name - Default matching: hash
+  -b, --batching [option]     Set to true/false to configure batch submitting
+                              to the API. When false, photos are submitted
+                              to the API one at a time. (default: true)
+  -c, --config [file]         Specify an optional configuration file
+  -h, --help                  Display this help
 "
                 exit 0
                 ;;
@@ -405,6 +407,19 @@ Usage: transfer-album.sh <options>
                     sidecarDirectory="$2"
 
                     # Shift to the next argument
+                    shift 2
+                fi
+                ;;
+            --metadata-file | -j )
+                if [ -z "$2" ]; then
+                    echo "Usage: transfer-album $1 metadata.json" >&2
+                    exit 1
+                else
+                    # set the metadata filename
+                    metadataFilename="$(basename "$2" .json).json"
+                    echo "Using user-specified metadata file: $metadataFilename"
+
+                    # Shift to the next agument
                     shift 2
                 fi
                 ;;
@@ -468,6 +483,9 @@ if [ -z "$batching" ]; then
 fi
 if [ -z "$matching" ]; then
     matching="hash"
+fi
+if [ -z "$metadataFilename" ]; then
+    metadataFilename="metadata.json"
 fi
 
 # Prompt user for input if necessary
@@ -542,7 +560,7 @@ if [ -n "$specifiedAlbum" ]; then
             import_album "$foundAlbum"
         fi
     fi
-elif [ -f "metadata.json" ]; then
+elif [ -f "$metadataFilename" ]; then
     # If we are being run from an album directory, just import this album
     echo "\"$importDirectory\" appears to be an album; importing in single album mode..."
     import_album "$importDirectory"
