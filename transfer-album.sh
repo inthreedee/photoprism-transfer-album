@@ -36,9 +36,6 @@ albumAPI="/api/v1/albums"
 fileAPI="/api/v1/files"
 # Note - Album photos API: /api/v1/albums/$albumUID/photos
 
-# Get the location of this script
-runDir="$(realpath "$0" | xargs dirname)"
-
 ############################################################################
 
 shopt -s globstar
