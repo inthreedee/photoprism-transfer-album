@@ -500,8 +500,8 @@ fi
 
 # Set the Google Takeout directory if needed
 if [ -z "$importDirectory" ]; then
-    echo "Import directory not set, using current working directory"
     importDirectory="$(pwd)"
+    echo "Import directory not set, using $importDirectory"
 fi
 
 # Get the sidecar directory if needed
