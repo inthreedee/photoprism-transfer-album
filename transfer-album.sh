@@ -468,7 +468,7 @@ Usage: transfer-album.sh <options>
                 fi
                 ;;
             * )
-                echo -e "Invalid option '$1'\nUse -h for help" >&2
+                echo -e "Invalid command line argument: '$1'\nUse -h for help" >&2
                 exit 0
                 ;;
         esac
