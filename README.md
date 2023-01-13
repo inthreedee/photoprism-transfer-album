@@ -27,7 +27,7 @@ use `--match name` as described below. PhotoPrism's sidecar yml files will be re
 
 ## Tip:
 Pipe the output to tee to watch it run and save the output to a file:
-`./transfer-album.sh [options] | tee output.log`
+`./transfer-album.sh [options] 2>&1 | tee output.log`
 
 Then, use grep to list the photos that couldn't be matched:
 `grep WARN output.log > failures.log`
