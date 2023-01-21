@@ -33,6 +33,11 @@ Then, use grep to list the photos that couldn't be matched:
 `grep WARN output.log > failures.log`
 
 
+## A note on parsing json:
+This script uses standard Linux tools to parse json files. It makes several assumptions about the formatting of those json files and may break if Google changes the formatting.
+
+For more robust and reliable json parsing, the get_json_field() function includes an alternate option using the external tool jq. To use jq, install it from your package manager and then edit this script as explained in the get_json_field() function comments.
+
 
 ## Options:
 ```
