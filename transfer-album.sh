@@ -61,11 +61,12 @@ function get_json_field() {
 
     # This assumes a nicely formatted JSON with one key:value pair per line
     # It prints the first match only, ignoring the rest
-    # Photoprism converts double quotes to single, so we do to 
+    # Photoprism converts double quotes to single, so we do to
     grep -m 1 "\"$field\"" "$filename" | cut -d'"' -f4- | sed -E 's|(.*)".*$|\1|' | sed 's|\\"|\x27|g'
     
     # This is more robust but only works if you have jq installed
-    # Depending on whether there is an albumdata array, use one of the following: 
+    # Depending on whether there is an albumdata array,
+    # comment out the above line and uncomment one of the following:
     #jq -r '.albumData["'"$field"'"]' "$filename" | tr '"' "'"
     #jq -r '."'"$field"'"' "$filename" | tr '"' "'"
 }
