@@ -59,11 +59,15 @@ function get_json_field() {
     field="$1"
     filename="$2"
 
-    # This assumes a nicely formatted JSON with one key:value pair per line and no escaped quotes
+    # This assumes a nicely formatted JSON with one key:value pair per line
     # It prints the first match only, ignoring the rest
-    awk -F '"' '/"'"$field"'":/ {print $4;exit;}' "$filename"
+    # Photoprism converts double quotes to single, so we do to 
+    grep -m 1 "\"$field\"" "$filename" | cut -d'"' -f4- | sed -E 's|(.*)".*$|\1|' | sed 's|\\"|\x27|g'
+    
     # This is more robust but only works if you have jq installed
-    #jq -r '.albumData["'"$field"'"]' "$filename"
+    # Depending on whether there is an albumdata array, use one of the following: 
+    #jq -r '.albumData["'"$field"'"]' "$filename" | tr '"' "'"
+    #jq -r '."'"$field"'"' "$filename" | tr '"' "'"
 }
 
 # Create a json array of photo UIDs
