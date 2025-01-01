@@ -6,8 +6,12 @@ has been fully transferred, this script will scrape the necessary data from a Go
 Takeout of an album and then, using the PhotoPrism API, create a new PhotoPrism 
 album and populate it with the matching photos.
 
-Note: You must import or index the photos from your Google Photos Takeout before 
+> [!note]
+> You must import or index the photos from your Google Photos Takeout before 
 running this script!  This script does not upload any photos for you.
+
+> [!important]
+> Google Takeout [may not include](https://support.google.com/photos/thread/252498352/google-takeout-for-google-photos-does-not-contain-shared-photos-in-albums?hl=en) shared photos. To download an album including all shared photos, it can be downloaded directly from the Google Photos interface.
   
 [upstream]: https://github.com/inthreedee/photoprism-transfer-album
 [insight]: https://github.com/photoprism/photoprism/issues/869#issuecomment-779488150
